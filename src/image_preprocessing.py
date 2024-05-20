@@ -1,6 +1,6 @@
+import os
 import cv2
 import numpy as np
-
 
 def preprocess_image(image, target_size):
     # Resize image while preserving aspect ratio
@@ -10,7 +10,6 @@ def preprocess_image(image, target_size):
     normalized_image = normalize_image(resized_image)
 
     return normalized_image
-
 
 def resize_image(image, target_size):
     """Resize image while preserving aspect ratio"""
@@ -43,12 +42,10 @@ def resize_image(image, target_size):
 
     return resized_image
 
-
 def normalize_image(image):
     """Normalize pixel values to [0, 1]"""
     normalized_image = image.astype(np.float32) / 255.0
     return normalized_image
-
 
 def save_image(image, output_path):
     """Save image to filesystem"""
@@ -57,19 +54,28 @@ def save_image(image, output_path):
     # Save image
     cv2.imwrite(output_path, image_uint8)
 
+# # Directory paths
+# input_directory = "./data/images/raw/"  # Directory containing raw images
+# output_directory = "./data/images/processed/"  # Directory to save preprocessed images
 
-# Example usage:
-image_path = "./data/images/raw/example.png"  # Path to your input image
-output_path = "./data/images/processed/example.png"  # Path to save the preprocessed image
-target_size = (224, 224)  # Target size for resizing
+# # Target size for resizing
+# target_size = (224, 224)  
 
-# Read image using OpenCV
-image = cv2.imread(image_path)
+def process_directory(input_directory, output_directory, target_size):
+    # Iterate over each file in the input directory
+    for filename in os.listdir(input_directory):
+        if filename.endswith(".png") or filename.endswith(".jpg"):  # Consider only image files
+            # Read image using OpenCV
+            image_path = os.path.join(input_directory, filename)
+            image = cv2.imread(image_path)
 
-# Preprocess image
-preprocessed_image = preprocess_image(image, target_size)
+            # Preprocess image
+            preprocessed_image = preprocess_image(image, target_size)
 
-# Save preprocessed image
-save_image(preprocessed_image, output_path)
+            # Output path for preprocessed image
+            output_path = os.path.join(output_directory, filename)
 
-print("Preprocessed image saved to:", output_path)
+            # Save preprocessed image
+            save_image(preprocessed_image, output_path)
+
+            print("Preprocessed image saved to:", output_path)
