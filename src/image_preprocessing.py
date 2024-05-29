@@ -78,4 +78,4 @@ def process_directory(input_directory, output_directory, target_size):
             # Save preprocessed image
             save_image(preprocessed_image, output_path)
 
-            print("Preprocessed image saved to:", output_path)
+            # print("Preprocessed image saved to:", output_path)

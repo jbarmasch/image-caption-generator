@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.python.keras import layers, Model
+from tensorflow.keras import layers, Model
 
 class CNN:
     def __init__(self, input_shape, num_classes):
@@ -31,7 +31,7 @@ class CNN:
 
     def train(self, train_dataset, val_dataset, epochs=10, batch_size=32):
         self.model.compile(optimizer='adam',
-                           loss='sparse_categorical_crossentropy',
+                           loss='categorical_crossentropy',
                            metrics=['accuracy'])
         
         history = self.model.fit(train_dataset,
@@ -50,11 +50,11 @@ class CNN:
 
 # Example usage:
 # Define input shape and number of classes
-input_shape = (224, 224, 3)
-num_classes = 10
+# input_shape = (224, 224, 3)
+# num_classes = 10
 
-# Create an instance of the CNN model
-cnn_model = CNN(input_shape, num_classes)
+# # Create an instance of the CNN model
+# cnn_model = CNN(input_shape, num_classes)
 
-# Print model summary
-cnn_model.model.summary()
+# # Print model summary
+# cnn_model.model.summary()

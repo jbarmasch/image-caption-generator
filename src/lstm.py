@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.python.keras import layers, Model
+from tensorflow.keras import layers, Model
 
 class LSTM:
     def __init__(self, input_shape, num_classes, num_lstm_layers=1, lstm_units=256):
@@ -18,16 +18,11 @@ class LSTM:
         for _ in range(self.num_lstm_layers):
             lstm_layers = layers.LSTM(units=self.lstm_units, return_sequences=True)(lstm_layers)
 
-        # Add output layer
-        output_layer = layers.Dense(self.num_classes, activation='softmax')(lstm_layers)
-
-        # Create the model
-        model = Model(inputs=input_layer, outputs=output_layer)
-        return model
+        return Model(inputs=input_layer, outputs=lstm_layers)
 
     def train(self, train_dataset, val_dataset, epochs=10, batch_size=32):
         self.model.compile(optimizer='adam',
-                           loss='sparse_categorical_crossentropy',
+                           loss='categorical_crossentropy',
                            metrics=['accuracy'])
 
         history = self.model.fit(train_dataset,
@@ -43,13 +38,14 @@ class LSTM:
         # Make predictions using the model
         return self.model.predict(features)
 
-# Example usage:
-# Define input shape and number of classes
-input_shape = (512,)  # Example: Output shape of CNN
-num_classes = 10
 
-# Create an instance of the RNN model
-rnn_model = LSTM(input_shape, num_classes, num_lstm_layers=2, lstm_units=512)
+# # Example usage:
+# # Define input shape and number of classes
+# input_shape = (512,)  # Example: Output shape of CNN
+# num_classes = 10
 
-# Print model summary
-rnn_model.model.summary()
+# # Create an instance of the RNN model
+# rnn_model = LSTM(input_shape, num_classes, num_lstm_layers=2, lstm_units=512)
+
+# # Print model summary
+# rnn_model.model.summary()
