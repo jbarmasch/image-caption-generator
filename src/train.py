@@ -83,7 +83,7 @@ caption_model.compile(optimizer=keras.optimizers.Adam(lr_schedule), loss=cross_e
 
 # Callback for saving model weights
 checkpoint = ModelCheckpoint(
-    filepath="model_weights_2_{epoch:02d}.weights.h5",
+    filepath="Training results\\Weights\\LSTM\\1e-5\\model_weights_{epoch:02d}.weights.h5",
     save_weights_only=True,
     save_freq="epoch",
 )
