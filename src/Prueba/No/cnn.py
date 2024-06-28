@@ -1,15 +1,36 @@
 import keras
 from keras import layers
 from keras import ops
+from keras.callbacks import ModelCheckpoint
+import os
+
+os.environ['TFDS_DATA_DIR'] = 'F:\\tensorflow_datasets'
 
 import matplotlib.pyplot as plt
 
-num_classes = 100
+import tensorflow_datasets as tfds
+
+num_classes = 600
 input_shape = (32, 32, 3)
 
-(x_train, y_train), (x_test, y_test) = keras.datasets.cifar100.load_data()
-y_train = keras.utils.to_categorical(y_train, num_classes)
-y_test = keras.utils.to_categorical(y_test, num_classes)
+### Prepare OpenImagesV4
+
+# Load the Open Images V4 dataset
+# train_dataset, val_dataset, test_dataset = tfds.load('open_images_v4', split=['train', 'validation', 'test'], as_supervised=True)
+
+# ### Prepare Imagenet
+# imagenet = tfds.load("imagenet2012")
+# imagenet.download_and_prepare()
+# datasets = imagenet.as_dataset()
+# train_dataset, validation_dataset = datasets['train'], datasets['validation']
+# Convert to NumPy arrays
+x_train, y_train = tfds.as_numpy(train_dataset)
+x_test, y_test = tfds.as_numpy(val_dataset)
+
+# ### Prepare CIFAR100
+# (x_train, y_train), (x_test, y_test) = keras.datasets.cifar100.load_data()
+# y_train = keras.utils.to_categorical(y_train, num_classes)
+# y_test = keras.utils.to_categorical(y_test, num_classes)
 print(f"x_train shape: {x_train.shape} - y_train shape: {y_train.shape}")
 print(f"x_test shape: {x_test.shape} - y_test shape: {y_test.shape}")
 
@@ -18,7 +39,7 @@ learning_rate = 0.001
 label_smoothing = 0.1
 validation_split = 0.2
 batch_size = 128
-num_epochs = 50
+num_epochs = 20
 patch_size = 2  # Size of the patches to be extracted from the input images.
 num_patches = (input_shape[0] // patch_size) ** 2  # Number of patch
 embedding_dim = 64  # Number of hidden units.
@@ -47,8 +68,8 @@ data_augmentation = keras.Sequential(
 data_augmentation.layers[0].adapt(x_train)
 
 class PatchExtract(layers.Layer):
-    def __init__(self, patch_size, **kwargs):
-        super().__init__(**kwargs)
+    def _init_(self, patch_size, **kwargs):
+        super()._init_(**kwargs)
         self.patch_size = patch_size
 
     def call(self, x):
@@ -59,8 +80,8 @@ class PatchExtract(layers.Layer):
 
 
 class PatchEmbedding(layers.Layer):
-    def __init__(self, num_patch, embed_dim, **kwargs):
-        super().__init__(**kwargs)
+    def _init_(self, num_patch, embed_dim, **kwargs):
+        super()._init_(**kwargs)
         self.num_patch = num_patch
         self.proj = layers.Dense(embed_dim)
         self.pos_embed = layers.Embedding(input_dim=num_patch, output_dim=embed_dim)
@@ -173,7 +194,7 @@ def get_cnn(attention_type="external_attention"):
     model = keras.Model(inputs=inputs, outputs=outputs)
     return model
 
-### Train on CIFAR-100 ###
+### Train on Imagenet ###
 
 model = get_cnn(attention_type="external_attention")
 
@@ -188,13 +209,23 @@ model.compile(
     ],
 )
 
+# Callback for saving model weights
+checkpoint = ModelCheckpoint(
+    filepath="model_weights_2_{epoch:02d}.weights.h5",
+    save_weights_only=True,
+    save_freq="epoch",
+)
+
 history = model.fit(
     x_train,
     y_train,
     batch_size=batch_size,
     epochs=num_epochs,
     validation_split=validation_split,
+    callbacks=[checkpoint],
 )
+
+model.save("cnn.h5")
 
 plt.plot(history.history["loss"], label="train_loss")
 plt.plot(history.history["val_loss"], label="val_loss")
@@ -204,6 +235,19 @@ plt.title("Train and Validation Losses Over Epochs", fontsize=14)
 plt.legend()
 plt.grid()
 plt.show()
+
+# Plot training & validation accuracy values
+plt.subplot(1, 2, 2)
+plt.plot(history.history["accuracy"], label="train_accuracy")
+plt.plot(history.history["val_accuracy"], label="val_accuracy")
+plt.xlabel("Epochs")
+plt.ylabel("Accuracy")
+plt.title("Train and Validation Accuracy Over Epochs")
+plt.legend()
+plt.grid()
+
+plt.show()
+
 
 loss, accuracy, top_5_accuracy = model.evaluate(x_test, y_test)
 print(f"Test loss: {round(loss, 2)}")

@@ -23,7 +23,7 @@ model_save_path = ".\\models\\image_caption_model.h5"  # Path to save the traine
 target_size = (224, 224)  # Target size for image resizing
 batch_size = 32
 epochs = 10
-max_length = 34  # Maximum length of captions (adjust as necessary)
+max_length = 36  # Maximum length of captions (adjust as necessary)
 vocab_size = 5000  # Maximum number of words in tokenizer (adjust as necessary)
 embedding_dim = 256
 lstm_units = 512
@@ -75,10 +75,10 @@ class ImageCaptionGenerator(Sequence):
 def create_dataset(image_filenames, captions, batch_size, target_size, vocab_size):
     output_signature = (
         (
-            tf.TensorSpec(shape=(None, 224, 224, 3), dtype=tf.float32),
-            tf.TensorSpec(shape=(None, 34), dtype=tf.int32),
+            tf.TensorSpec(shape=(224, 224, 3), dtype=tf.float32),
+            tf.TensorSpec(shape=(35), dtype=tf.int32),
         ),
-        tf.TensorSpec(shape=(None, 34, vocab_size), dtype=tf.int32),
+        tf.TensorSpec(shape=(35, vocab_size), dtype=tf.int32),
     )
 
     def generator_fn():
@@ -102,7 +102,7 @@ def build_combined_model(cnn_model, lstm_model, vocab_size, embedding_dim, max_l
 
     # LSTM input
     lstm_input = Input(shape=(max_length,))
-    lstm_embedding = Embedding(vocab_size, embedding_dim)(lstm_input)  # Shape: (None, max_length, embedding_dim)
+    lstm_embedding = Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=34)(lstm_input)  # Shape: (None, max_length, embedding_dim)
 
     # Combine CNN output and LSTM input
     combined_input = Concatenate(axis=1)([cnn_output, lstm_embedding])  # Shape: (None, 1 + max_length, embedding_dim)

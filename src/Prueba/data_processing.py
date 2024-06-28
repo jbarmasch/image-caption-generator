@@ -15,7 +15,7 @@ from keras.layers import TextVectorization
 keras.utils.set_random_seed(111)
 
 # Path to the images
-IMAGES_PATH = "F:\\Datasets\\archive\\flickr30k_images\\flickr30k_images"
+IMAGES_PATH = "F:\\Datasets\\8k\\Images"
 
 # Desired image dimensions
 IMAGE_SIZE = (299, 299)
@@ -57,7 +57,7 @@ def load_captions_data(filename):
         for line in caption_data:
             line = line.rstrip("\n")
             # Image name and captions are separated using a tab
-            img_name, caption = line.split("\t")
+            img_name, caption = line.split(":::")
 
             # Each image is repeated five times for the five different captions.
             # Each image name has a suffix `#(caption_number)`
@@ -122,7 +122,7 @@ def train_val_split(caption_data, train_size=0.8, shuffle=True):
 
 
 # Load the dataset
-captions_mapping, text_data = load_captions_data("Flickr8k.token.txt")
+captions_mapping, text_data = load_captions_data("F:\\Datasets\\8k\\captions.txt")
 
 # Split the dataset into training and validation sets
 train_data, valid_data = train_val_split(captions_mapping)

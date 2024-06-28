@@ -11,14 +11,16 @@ import keras
 from keras import layers
 from keras.applications import efficientnet
 from keras.layers import TextVectorization
+from keras.callbacks import ModelCheckpoint
+
 
 keras.utils.set_random_seed(111)
 
-from src.Prueba.data_processing import train_dataset, valid_dataset, vectorization, train_data, valid_data, decode_and_resize
-from src.Prueba.model import caption_model
+from data_processing import train_dataset, valid_dataset, vectorization, train_data, valid_data, decode_and_resize
+from model import caption_model
 
 # Path to the images
-IMAGES_PATH = "F:\\Datasets\\archive\\flickr30k_images\\flickr30k_images"
+IMAGES_PATH = "F:\\Datasets\\8k\\Images"
 
 # Desired image dimensions
 IMAGE_SIZE = (299, 299)
@@ -37,7 +39,7 @@ FF_DIM = 512
 
 # Other training parameters
 BATCH_SIZE = 64
-EPOCHS = 30
+EPOCHS = 350
 AUTOTUNE = tf.data.AUTOTUNE
 
 ### TRAIN THE MODEL ###
@@ -49,7 +51,7 @@ cross_entropy = keras.losses.SparseCategoricalCrossentropy(
 )
 
 # EarlyStopping criteria
-early_stopping = keras.callbacks.EarlyStopping(patience=3, restore_best_weights=True)
+early_stopping = keras.callbacks.EarlyStopping(patience=10, restore_best_weights=True)
 
 
 # Learning Rate Scheduler for the optimizer
@@ -74,18 +76,28 @@ class LRSchedule(keras.optimizers.schedules.LearningRateSchedule):
 # Create a learning rate schedule
 num_train_steps = len(train_dataset) * EPOCHS
 num_warmup_steps = num_train_steps // 15
-lr_schedule = LRSchedule(post_warmup_learning_rate=1e-4, warmup_steps=num_warmup_steps)
+lr_schedule = LRSchedule(post_warmup_learning_rate=1e-5, warmup_steps=num_warmup_steps)
 
 # Compile the model
 caption_model.compile(optimizer=keras.optimizers.Adam(lr_schedule), loss=cross_entropy)
 
+# Callback for saving model weights
+checkpoint = ModelCheckpoint(
+    filepath="model_weights_2_{epoch:02d}.weights.h5",
+    save_weights_only=True,
+    save_freq="epoch",
+)
+
 # Fit the model
-caption_model.fit(
+history = caption_model.fit(
     train_dataset,
     epochs=EPOCHS,
     validation_data=valid_dataset,
-    callbacks=[early_stopping],
+    callbacks=[early_stopping, checkpoint],
 )
+
+# caption_model.save("model.keras")
+
 
 ### Check Sample predictions ###
 
