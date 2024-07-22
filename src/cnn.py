@@ -4,7 +4,7 @@ from keras import ops
 from keras.callbacks import ModelCheckpoint
 import os
 
-os.environ['TFDS_DATA_DIR'] = 'F:\\tensorflow_datasets'
+# os.environ['TFDS_DATA_DIR'] = 'F:\\tensorflow_datasets'
 
 import matplotlib.pyplot as plt
 
@@ -24,15 +24,15 @@ input_shape = (32, 32, 3)
 # datasets = imagenet.as_dataset()
 # train_dataset, validation_dataset = datasets['train'], datasets['validation']
 # Convert to NumPy arrays
-x_train, y_train = tfds.as_numpy(train_dataset)
-x_test, y_test = tfds.as_numpy(val_dataset)
+#x_train, y_train = tfds.as_numpy(train_dataset)
+# x_test, y_test = tfds.as_numpy(val_dataset)
 
 # ### Prepare CIFAR100
 # (x_train, y_train), (x_test, y_test) = keras.datasets.cifar100.load_data()
 # y_train = keras.utils.to_categorical(y_train, num_classes)
 # y_test = keras.utils.to_categorical(y_test, num_classes)
-print(f"x_train shape: {x_train.shape} - y_train shape: {y_train.shape}")
-print(f"x_test shape: {x_test.shape} - y_test shape: {y_test.shape}")
+#print(f"x_train shape: {x_train.shape} - y_train shape: {y_train.shape}")
+#print(f"x_test shape: {x_test.shape} - y_test shape: {y_test.shape}")
 
 weight_decay = 0.0001
 learning_rate = 0.001
@@ -192,66 +192,21 @@ def get_cnn(attention_type="external_attention"):
     x = layers.GlobalAveragePooling1D()(x)
     outputs = layers.Dense(num_classes, activation="softmax")(x)
     model = keras.Model(inputs=inputs, outputs=outputs)
+
+    model.compile(
+    loss=keras.losses.CategoricalCrossentropy(label_smoothing=label_smoothing),
+        optimizer=keras.optimizers.AdamW(
+            learning_rate=learning_rate, weight_decay=weight_decay
+        ),
+        metrics=[
+            keras.metrics.CategoricalAccuracy(name="accuracy"),
+            keras.metrics.TopKCategoricalAccuracy(5, name="top-5-accuracy"),
+        ],
+    )
+
     return model
 
 ### Train on Imagenet ###
 
 model = get_cnn(attention_type="external_attention")
 
-model.compile(
-    loss=keras.losses.CategoricalCrossentropy(label_smoothing=label_smoothing),
-    optimizer=keras.optimizers.AdamW(
-        learning_rate=learning_rate, weight_decay=weight_decay
-    ),
-    metrics=[
-        keras.metrics.CategoricalAccuracy(name="accuracy"),
-        keras.metrics.TopKCategoricalAccuracy(5, name="top-5-accuracy"),
-    ],
-)
-
-# Callback for saving model weights
-checkpoint = ModelCheckpoint(
-    filepath="model_weights_2_{epoch:02d}.weights.h5",
-    save_weights_only=True,
-    save_freq="epoch",
-)
-
-history = model.fit(
-    x_train,
-    y_train,
-    batch_size=batch_size,
-    epochs=num_epochs,
-    validation_split=validation_split,
-    callbacks=[checkpoint],
-)
-
-model.save("cnn.h5")
-
-plt.plot(history.history["loss"], label="train_loss")
-plt.plot(history.history["val_loss"], label="val_loss")
-plt.xlabel("Epochs")
-plt.ylabel("Loss")
-plt.title("Train and Validation Losses Over Epochs", fontsize=14)
-plt.legend()
-plt.grid()
-plt.show()
-# Save to ./Training results/Graphs/Loss
-plt.savefig("Training results\\Graphs\\Loss")
-
-# Plot training & validation accuracy values
-plt.subplot(1, 2, 2)
-plt.plot(history.history["accuracy"], label="train_accuracy")
-plt.plot(history.history["val_accuracy"], label="val_accuracy")
-plt.xlabel("Epochs")
-plt.ylabel("Accuracy")
-plt.title("Train and Validation Accuracy Over Epochs")
-plt.legend()
-plt.grid()
-plt.show()
-plt.savefig("Training results\\Graphs\\Acc")
-
-
-loss, accuracy, top_5_accuracy = model.evaluate(x_test, y_test)
-print(f"Test loss: {round(loss, 2)}")
-print(f"Test accuracy: {round(accuracy * 100, 2)}%")
-print(f"Test top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
