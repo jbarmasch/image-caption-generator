@@ -2,7 +2,9 @@ import torch
 import time
 from pathlib import Path
 from PIL import Image
-from models import llavaCaptioner, BLIPCaptioner, MoondreamCaptioner
+# from models.llava import llavaCaptioner
+from models.blip import BLIPCaptioner
+from models.moondream import MoondreamCaptioner
 from utils import compute_statistics
 
 def generate_captions(image_paths, captioners, get_statistics = False):
@@ -46,16 +48,21 @@ def generate_captions(image_paths, captioners, get_statistics = False):
             print("="*50)
 
 if __name__ == "__main__":
-    device = torch.device("cpu") # torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    torch_device = torch.device("cpu") # torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Define the image paths
+    # src_directory = Path("F:\\Datasets\\archive\\flickr30k_images\\flickr30k_images\\flickr30k_images")
+    # dest_directory = Path("./data/images/groups")
+    # group_pictures(src_directory, dest_directory)
     image_dir = Path("data/images/processed")
     image_paths = list(image_dir.glob("*.jpg")) + list(image_dir.glob("*.png")) + list(image_dir.glob("*.jpeg"))
     
     # Initialize the captioners
-    llava = llavaCaptioner()
-    blip = BLIPCaptioner()
-    moondream = MoondreamCaptioner()
+    # llava = llavaCaptioner()
+    blip = BLIPCaptioner(torch_device=torch_device)
+    print("BLIP model loaded")
+    moondream = MoondreamCaptioner(torch_device=torch_device)
+    print("Moondream model loaded")
     
     # Generate captions and compare performance
-    generate_captions(image_paths, [blip, moondream], get_statistics=True)
+    generate_captions(image_paths, [blip, moondream], get_statistics=False)

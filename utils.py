@@ -58,8 +58,3 @@ def group_pictures(src_dir, dest_dir, group_size=5, num_groups=30):
             shutil.copy(os.path.join(src_dir, pic), os.path.join(group_dir, pic))
 
     print(f"Successfully created {num_groups} groups of {group_size} pictures each in {dest_dir}")
-
-# Example usage
-src_directory = Path("F:\\Datasets\\archive\\flickr30k_images\\flickr30k_images\\flickr30k_images")
-dest_directory = Path("./data/images/groups")
-group_pictures(src_directory, dest_directory)
