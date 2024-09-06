@@ -1,170 +1,132 @@
-import os
-
-os.environ["KERAS_BACKEND"] = "tensorflow"
-
-import re
 import numpy as np
 import matplotlib.pyplot as plt
-
 import tensorflow as tf
 import keras
-from keras import layers
-from keras.applications import efficientnet
-from keras.layers import TextVectorization
+import os
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 from keras.callbacks import ModelCheckpoint
+from preprocessing import load_captions, preprocess_captions, create_datasets, create_data_generator, load_image_features
+from lstm import build_lstm_model
 
+# Load and preprocess captions
+captions_path = 'F:\\Datasets\\archive\\flickr30k_images\\results.csv'
+features_path = 'F:\\Datasets\\archive\\flickr30k_images\\features'
+image_path = 'F:\\Datasets\\archive\\flickr30k_images\\processed_images'
+max_len = 20
 
-keras.utils.set_random_seed(111)
+captions_df = load_captions(captions_path)
+tokenizer = preprocess_captions(captions_df, max_len=max_len)
 
-from data_processing import train_dataset, valid_dataset, vectorization, train_data, valid_data, decode_and_resize
-from model import caption_model
+# Create datasets
+captions_train_df, captions_val_df = create_datasets(captions_df, test_size=0.2)
 
-# Path to the images
-IMAGES_PATH = "F:\\Datasets\\8k\\Images"
+# Define model parameters
+vocab_size = len(tokenizer.word_index) + 1
 
-# Desired image dimensions
-IMAGE_SIZE = (299, 299)
+# Create and compile the model
+model = build_lstm_model(vocab_size=vocab_size)
+# model.compile(optimizer='adam', loss='sparse_categorical_crossentropy')
+model.load_weights('Training results\\Weights\\LSTM\\saat\\model_weights_28.weights.h5')
 
-# Vocabulary size
-VOCAB_SIZE = 10000
+# Display model summary
+model.summary()
 
-# Fixed length allowed for any sequence
-SEQ_LENGTH = 25
+captions_df = load_captions(captions_path)
+tokenizer = preprocess_captions(captions_df, max_len=max_len)
 
-# Dimension for the image embeddings and token embeddings
-EMBED_DIM = 512
+import pickle
+# Define the path where you want to save the tokenizer
+tokenizer_path = 'data\\tokenizer\\tokenizer.pkl'
 
-# Per-layer units in the feed-forward network
-FF_DIM = 512
+# Save the tokenizer to a pickle file
+with open(tokenizer_path, 'wb') as handle:
+    pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-# Other training parameters
-BATCH_SIZE = 64
-EPOCHS = 350
-AUTOTUNE = tf.data.AUTOTUNE
+# Create datasets
+captions_train_df, captions_val_df = create_datasets(captions_df, test_size=0.2)
 
-### TRAIN THE MODEL ###
+# Create data generators
+batch_size = 64
+train_generator = create_data_generator(captions_train_df, tokenizer, features_path, max_len=max_len, batch_size=batch_size, vocab_size=vocab_size)
+val_generator = create_data_generator(captions_val_df, tokenizer, features_path, max_len=max_len, batch_size=batch_size, vocab_size=vocab_size)
 
-# Define the loss function
-cross_entropy = keras.losses.SparseCategoricalCrossentropy(
-    from_logits=False,
-    reduction=None,
-)
+# Calculate steps per epoch
+steps_per_epoch_train = len(captions_train_df) // batch_size
+steps_per_epoch_val = len(captions_val_df) // batch_size
 
 # EarlyStopping criteria
 early_stopping = keras.callbacks.EarlyStopping(patience=10, restore_best_weights=True)
 
-
-# Learning Rate Scheduler for the optimizer
-class LRSchedule(keras.optimizers.schedules.LearningRateSchedule):
-    def __init__(self, post_warmup_learning_rate, warmup_steps):
-        super().__init__()
-        self.post_warmup_learning_rate = post_warmup_learning_rate
-        self.warmup_steps = warmup_steps
-
-    def __call__(self, step):
-        global_step = tf.cast(step, tf.float32)
-        warmup_steps = tf.cast(self.warmup_steps, tf.float32)
-        warmup_progress = global_step / warmup_steps
-        warmup_learning_rate = self.post_warmup_learning_rate * warmup_progress
-        return tf.cond(
-            global_step < warmup_steps,
-            lambda: warmup_learning_rate,
-            lambda: self.post_warmup_learning_rate,
-        )
-
-
-# Create a learning rate schedule
-num_train_steps = len(train_dataset) * EPOCHS
-num_warmup_steps = num_train_steps // 15
-lr_schedule = LRSchedule(post_warmup_learning_rate=1e-5, warmup_steps=num_warmup_steps)
-
-# Compile the model
-caption_model.compile(optimizer=keras.optimizers.Adam(lr_schedule), loss=cross_entropy)
-
 # Callback for saving model weights
 checkpoint = ModelCheckpoint(
-    filepath="Training results\\Weights\\LSTM\\1e-5\\model_weights_{epoch:02d}.weights.h5",
+    filepath="Training results\\Weights\\LSTM\\saat\\model_weights_{epoch:02d}.weights.h5",
     save_weights_only=True,
     save_freq="epoch",
 )
 
-# Fit the model
-history = caption_model.fit(
-    train_dataset,
-    epochs=EPOCHS,
-    validation_data=valid_dataset,
-    callbacks=[early_stopping, checkpoint],
-)
-
-# caption_model.save("model.keras")
-
-
-### Check Sample predictions ###
-
-vocab = vectorization.get_vocabulary()
-index_lookup = dict(zip(range(len(vocab)), vocab))
-max_decoded_sentence_length = SEQ_LENGTH - 1
-valid_images = list(valid_data.keys())
-
-
-def generate_caption():
-    # Select a random image from the validation dataset
-    sample_img = np.random.choice(valid_images)
-
-    # Read the image from the disk
-    sample_img = decode_and_resize(sample_img)
-    img = sample_img.numpy().clip(0, 255).astype(np.uint8)
-    plt.imshow(img)
-    plt.show()
-
-    # Pass the image to the CNN
-    img = tf.expand_dims(sample_img, 0)
-    img = caption_model.cnn_model(img)
-
-    # Pass the image features to the Transformer encoder
-    encoded_img = caption_model.encoder(img, training=False)
-
-    # Generate the caption using the Transformer decoder
-    decoded_caption = "<start> "
-    for i in range(max_decoded_sentence_length):
-        tokenized_caption = vectorization([decoded_caption])[:, :-1]
-        mask = tf.math.not_equal(tokenized_caption, 0)
-        predictions = caption_model.decoder(
-            tokenized_caption, encoded_img, training=False, mask=mask
-        )
-        sampled_token_index = np.argmax(predictions[0, i, :])
-        sampled_token = index_lookup[sampled_token_index]
-        if sampled_token == "<end>":
-            break
-        decoded_caption += " " + sampled_token
-
-    decoded_caption = decoded_caption.replace("<start> ", "")
-    decoded_caption = decoded_caption.replace(" <end>", "").strip()
-    print("Predicted Caption: ", decoded_caption)
-
-plt.plot(history.history["loss"], label="train_loss")
-plt.plot(history.history["val_loss"], label="val_loss")
-plt.xlabel("Epochs")
-plt.ylabel("Loss")
-plt.title("Train and Validation Losses Over Epochs", fontsize=14)
-plt.legend()
-plt.grid()
-plt.show()
-plt.savefig("Training results\\Graphs\\Loss")
+# Train the model
+epochs = 100
+# history = model.fit(
+#    train_generator,
+#    steps_per_epoch=steps_per_epoch_train,
+#    epochs=epochs,
+#    validation_data=val_generator,
+#    validation_steps=steps_per_epoch_val,
+#    callbacks = [checkpoint, early_stopping]
+#)
 
 # Plot training & validation accuracy values
-plt.subplot(1, 2, 2)
-plt.plot(history.history["accuracy"], label="train_accuracy")
-plt.plot(history.history["val_accuracy"], label="val_accuracy")
-plt.xlabel("Epochs")
-plt.ylabel("Accuracy")
-plt.title("Train and Validation Accuracy Over Epochs")
-plt.legend()
-plt.grid()
-plt.show()
-plt.savefig("Training results\\Graphs\\Acc")
+# plt.plot(history.history['accuracy'])
+# plt.plot(history.history['val_accuracy'])
+# plt.title('Model accuracy')
+# plt.xlabel('Epoch')
+# plt.ylabel('Accuracy')
+# plt.legend(['Train', 'Validation'], loc='upper left')
+# plt.savefig('accuracy.png')
+# plt.show()
 
-# Check predictions for a few samples
-generate_caption()
-generate_caption()
-generate_caption()
+# Plot training & validation loss values
+# plt.plot(history.history['loss'])
+# plt.plot(history.history['val_loss'])
+# plt.title('Model loss')
+# plt.xlabel('Epoch')
+# plt.ylabel('Loss')
+# plt.legend(['Train', 'Validation'], loc='upper left')
+# plt.savefig('loss.png')
+# plt.show()
+
+# Function to decode sequences back to text
+def decode_sequence(sequence, tokenizer):
+    reverse_word_index = {value: key for key, value in tokenizer.word_index.items()}
+    return ' '.join([reverse_word_index.get(idx, '') for idx in sequence if idx > 0])
+
+# Function to plot an image with a caption
+def plot_image_with_caption(image_features, caption, tokenizer, model, image_name, image_path):
+    # Generate the prediction
+    prediction = model.predict([image_features, caption], verbose=0)
+    predicted_sequence = np.argmax(prediction[0], axis=1)
+    predicted_caption = decode_sequence(predicted_sequence, tokenizer)
+    
+    # Load and display the image
+    img_path = os.path.join(image_path, f'{image_name}.jpg')
+    img = image.load_img(img_path, target_size=(224, 224))
+    plt.imshow(img)
+    plt.title(predicted_caption)
+    plt.axis('off')
+    plt.show()
+
+
+
+# Select a few samples to display
+num_samples_to_display = 5
+sample_indices = np.random.choice(len(captions_val_df), num_samples_to_display, replace=False)
+
+# Plot images with their predicted captions
+for idx in sample_indices:
+    image_name = captions_val_df.iloc[idx]['image_name'].replace('.jpg', '')
+    features = load_image_features(image_name, features_path).reshape(1, 196, 512)
+    caption = pad_sequences(tokenizer.texts_to_sequences([captions_val_df.iloc[idx]['comment']]), maxlen=max_len, padding='post')
+    plot_image_with_caption(features, caption, tokenizer, model, image_name, image_path)
+
+###############################################################################
