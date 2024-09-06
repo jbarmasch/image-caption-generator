@@ -106,58 +106,58 @@ def moondream_caption(image):
     enc_image = moondream_model.encode_image(image)
     return moondream_model.answer_question(enc_image, "Describe this image in a short yet informative sentence. It must be a concise caption, ignore the background", moondream_tokenizer) #
 
-blip_times = []
-moondream_times = []
-for folder in image_groups.iterdir():
-    if folder.is_dir():
-        print(folder)
-        for image in folder.iterdir():
-            print(image)
-            image = Image.open(image).convert("RGB")
-            #start_llava = time.time()
-            # llava_result = llava_caption(image)
-            #end_llava = time.time()
-            #total_llava = end_llava - start_llava
-            start_blip = time.time()
-            blip_result = blip_caption(image)
-            end_blip = time.time()
-            total_blip = end_blip - start_blip
-            blip_times.append(total_blip)
-            start_moon = time.time()
-            moondream_result = moondream_caption(image)
-            end_moon = time.time()
-            total_moon = end_moon - start_moon
-            moondream_times.append(total_moon)
-            print("="*50)
-            # Print results
-            print(f"Image: {image}")
-            #print(f"LLava Caption: {llava_result}")
-            #print("Caption obtained in: " + str(total_llava))
-            #print("-"*50)
-            print(f"BLIP-2 Caption: {blip_result}")
-            print("Caption obtained in: " + str(total_blip))
-            print("-"*50)
-            print(f"Moondream Caption: {moondream_result}")
-            print("Caption obtained in: " + str(total_moon))
-            print("="*50)
-
-blip_stats = compute_statistics(blip_times)
-moondream_stats = compute_statistics(moondream_times)
-print("BLIP-2 Statistics:")
-print(blip_stats)
-print("Moondream Statistics:")
-print(moondream_stats)
-exit()
+# blip_times = []
+# moondream_times = []
+# for folder in image_groups.iterdir():
+#     if folder.is_dir():
+#         print(folder)
+#         for image in folder.iterdir():
+#             print(image)
+#             image = Image.open(image).convert("RGB")
+#             #start_llava = time.time()
+#             # llava_result = llava_caption(image)
+#             #end_llava = time.time()
+#             #total_llava = end_llava - start_llava
+#             start_blip = time.time()
+#             blip_result = blip_caption(image)
+#             end_blip = time.time()
+#             total_blip = end_blip - start_blip
+#             blip_times.append(total_blip)
+#             start_moon = time.time()
+#             moondream_result = moondream_caption(image)
+#             end_moon = time.time()
+#             total_moon = end_moon - start_moon
+#             moondream_times.append(total_moon)
+#             print("="*50)
+#             # Print results
+#             print(f"Image: {image}")
+#             #print(f"LLava Caption: {llava_result}")
+#             #print("Caption obtained in: " + str(total_llava))
+#             #print("-"*50)
+#             print(f"BLIP-2 Caption: {blip_result}")
+#             print("Caption obtained in: " + str(total_blip))
+#             print("-"*50)
+#             print(f"Moondream Caption: {moondream_result}")
+#             print("Caption obtained in: " + str(total_moon))
+#             print("="*50)
+# 
+# blip_stats = compute_statistics(blip_times)
+# moondream_stats = compute_statistics(moondream_times)
+# print("BLIP-2 Statistics:")
+# print(blip_stats)
+# print("Moondream Statistics:")
+# print(moondream_stats)
+# exit()
 
 # Iterate over all images and compare captions
 for image_path in image_paths:
     image = Image.open(image_path).convert("RGB")
     
     # Generate captions
-    start_llava = time.time()
-    llava_result = llava_caption(image)
-    end_llava = time.time()
-    total_llava = end_llava - start_llava
+    # start_llava = time.time()
+    # llava_result = llava_caption(image)
+    # end_llava = time.time()
+    # total_llava = end_llava - start_llava
     start_blip = time.time()
     blip_result = blip_caption(image)
     end_blip = time.time()
@@ -169,9 +169,9 @@ for image_path in image_paths:
     print("="*50)
     # Print results
     print(f"Image: {image_path}")
-    print(f"LLava Caption: {llava_result}")
-    print("Caption obtained in: " + str(total_llava))
-    print("-"*50)
+    # print(f"LLava Caption: {llava_result}")
+    # print("Caption obtained in: " + str(total_llava))
+    # print("-"*50)
     print(f"BLIP-2 Caption: {blip_result}")
     print("Caption obtained in: " + str(total_blip))
     print("-"*50)
