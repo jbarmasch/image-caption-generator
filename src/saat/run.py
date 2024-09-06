@@ -10,7 +10,7 @@ from preprocessing import load_image_features, preprocess_captions, load_caption
 # Set paths
 features_path = 'data\\features'
 image_path = 'data\\images\\processed'
-model_weights_path = 'Training results\\Weights\\LSTM\\saat\\model_weights_28.weights.h5'
+model_weights_path = 'Training results\\Weights\\LSTM\\saat\\model_weights_03.weights.h5'
 tokenizer_path = 'data\\tokenizer\\tokenizer.pkl'
 
 # Load tokenizer
