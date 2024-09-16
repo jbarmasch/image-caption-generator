@@ -42,31 +42,24 @@ class MoondreamCaptioner:
     def device(self, device):
         self._device = device
 
-    # Method to generate a caption
     def get_caption(self, image, prompt=None):
         if prompt is None:
             prompt = self._default_prompt
         enc_image = self._moondream_model.encode_image(image)
         return self._moondream_model.answer_question(enc_image, prompt, self._moondream_tokenizer)
     
-    # Method for fine tuning
-    def fine_tune(self, dataset_name='flickr30k', output_dir='./results', num_train_epochs=3, batch_size=4, save_steps=500):
-        # Load the Flickr30k dataset if no dataset is provided
+    def fine_tune(self, dataset_name='flickr30k', output_dir='./Training results/Weights/Moondream', num_train_epochs=3, batch_size=4, save_steps=500):
         dataset = load_dataset(dataset_name)
 
-        # Preprocess the dataset
         def preprocess_function(examples):
             inputs = self._moondream_tokenizer(examples['caption'], truncation=True, padding='max_length', max_length=128)
             return inputs
 
-        # Apply preprocessing
         encoded_dataset = dataset.map(preprocess_function, batched=True)
 
-        # Prepare data for training
         train_dataset = encoded_dataset['train'].remove_columns(['caption']).with_format('torch')
         val_dataset = encoded_dataset['validation'].remove_columns(['caption']).with_format('torch')
 
-        # Define training arguments
         training_args = TrainingArguments(
             output_dir=output_dir,
             evaluation_strategy="steps",
@@ -74,16 +67,15 @@ class MoondreamCaptioner:
             per_device_train_batch_size=batch_size,
             per_device_eval_batch_size=batch_size,
             num_train_epochs=num_train_epochs,
-            logging_dir='./logs',
+            logging_dir='./Training results/logs',
             logging_steps=10,
-            save_steps=save_steps,  # Save model checkpoint every save_steps
-            save_total_limit=3,  # Limit the number of saved checkpoints
-            save_strategy="epoch",  # Save a checkpoint at the end of each epoch
+            save_steps=save_steps,
+            save_total_limit=3,
+            save_strategy="epoch",
             learning_rate=5e-5,
             weight_decay=0.01,
         )
 
-        # Define the Trainer
         trainer = Trainer(
             model=self._moondream_model,
             args=training_args,
@@ -93,10 +85,8 @@ class MoondreamCaptioner:
             compute_metrics=self.compute_metrics
         )
 
-        # Fine-tune the model
         trainer.train()
 
-        # Save the fine-tuned model and tokenizer
         self._moondream_model.save_pretrained(output_dir)
         self._moondream_tokenizer.save_pretrained(output_dir)
 
@@ -123,16 +113,12 @@ class MoondreamCaptioner:
 
     def save_metrics_to_file(self, metrics, output_file="metrics_log.json"):
         if os.path.exists(output_file):
-            # If file exists, load existing data
             with open(output_file, "r") as f:
                 data = json.load(f)
         else:
-            # Create a new file if it doesn't exist
             data = []
 
-        # Append the new metrics
         data.append(metrics)
 
-        # Write back the updated data
         with open(output_file, "w") as f:
             json.dump(data, f, indent=4)
