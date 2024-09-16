@@ -1,5 +1,8 @@
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+import json
+import os
+from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
+from datasets import load_dataset, load_metric
 
 class MoondreamCaptioner:
     def __init__(self, torch_device = torch.device("cpu")):
@@ -8,34 +11,33 @@ class MoondreamCaptioner:
         self._moondream_model = AutoModelForCausalLM.from_pretrained(
             "vikhyatk/moondream2", trust_remote_code=True, revision="2024-07-23"
         ).to(self._device)
+
+        self.bleu_metric = load_metric("bleu")
+        self.meteor_metric = load_metric("meteor")
+        self.rouge_metric = load_metric("rouge")
+
         self._default_prompt = "Describe this image in a short yet informative sentence. It must be a concise caption, ignore the background."
 
-    # Getter for moondream_tokenizer
     @property
     def moondream_tokenizer(self):
         return self._moondream_tokenizer
 
-    # Getter for moondream_model
     @property
     def moondream_model(self):
         return self._moondream_model
 
-    # Getter for default_prompt
     @property
     def default_prompt(self):
         return self._default_prompt
     
-    # Getter for device
     @property
     def device(self):
         return self._device
 
-    # Setter for default_prompt
     @default_prompt.setter
     def default_prompt(self, prompt):
         self._default_prompt = prompt
 
-    # Setter for device
     @device.setter
     def device(self, device):
         self._device = device
@@ -46,3 +48,91 @@ class MoondreamCaptioner:
             prompt = self._default_prompt
         enc_image = self._moondream_model.encode_image(image)
         return self._moondream_model.answer_question(enc_image, prompt, self._moondream_tokenizer)
+    
+    # Method for fine tuning
+    def fine_tune(self, dataset_name='flickr30k', output_dir='./results', num_train_epochs=3, batch_size=4, save_steps=500):
+        # Load the Flickr30k dataset if no dataset is provided
+        dataset = load_dataset(dataset_name)
+
+        # Preprocess the dataset
+        def preprocess_function(examples):
+            inputs = self._moondream_tokenizer(examples['caption'], truncation=True, padding='max_length', max_length=128)
+            return inputs
+
+        # Apply preprocessing
+        encoded_dataset = dataset.map(preprocess_function, batched=True)
+
+        # Prepare data for training
+        train_dataset = encoded_dataset['train'].remove_columns(['caption']).with_format('torch')
+        val_dataset = encoded_dataset['validation'].remove_columns(['caption']).with_format('torch')
+
+        # Define training arguments
+        training_args = TrainingArguments(
+            output_dir=output_dir,
+            evaluation_strategy="steps",
+            eval_steps=500,
+            per_device_train_batch_size=batch_size,
+            per_device_eval_batch_size=batch_size,
+            num_train_epochs=num_train_epochs,
+            logging_dir='./logs',
+            logging_steps=10,
+            save_steps=save_steps,  # Save model checkpoint every save_steps
+            save_total_limit=3,  # Limit the number of saved checkpoints
+            save_strategy="epoch",  # Save a checkpoint at the end of each epoch
+            learning_rate=5e-5,
+            weight_decay=0.01,
+        )
+
+        # Define the Trainer
+        trainer = Trainer(
+            model=self._moondream_model,
+            args=training_args,
+            train_dataset=train_dataset,
+            eval_dataset=val_dataset,
+            tokenizer=self._moondream_tokenizer,
+            compute_metrics=self.compute_metrics
+        )
+
+        # Fine-tune the model
+        trainer.train()
+
+        # Save the fine-tuned model and tokenizer
+        self._moondream_model.save_pretrained(output_dir)
+        self._moondream_tokenizer.save_pretrained(output_dir)
+
+    def compute_metrics(self, eval_pred):
+        predictions, labels = eval_pred
+        decoded_preds = self._moondream_tokenizer.batch_decode(predictions, skip_special_tokens=True)
+        decoded_labels = self._moondream_tokenizer.batch_decode(labels, skip_special_tokens=True)
+
+        decoded_labels = [[label] for label in decoded_labels]
+
+        bleu_result = self.bleu_metric.compute(predictions=decoded_preds, references=decoded_labels)
+        meteor_result = self.meteor_metric.compute(predictions=decoded_preds, references=decoded_labels)
+        rouge_result = self.rouge_metric.compute(predictions=decoded_preds, references=decoded_labels)
+
+        metrics = {
+            "bleu": bleu_result["bleu"],
+            "meteor": meteor_result["meteor"],
+            "rougeL": rouge_result["rougeL"].mid.fmeasure
+        }
+
+        self.save_metrics_to_file(metrics)
+
+        return metrics
+
+    def save_metrics_to_file(self, metrics, output_file="metrics_log.json"):
+        if os.path.exists(output_file):
+            # If file exists, load existing data
+            with open(output_file, "r") as f:
+                data = json.load(f)
+        else:
+            # Create a new file if it doesn't exist
+            data = []
+
+        # Append the new metrics
+        data.append(metrics)
+
+        # Write back the updated data
+        with open(output_file, "w") as f:
+            json.dump(data, f, indent=4)
