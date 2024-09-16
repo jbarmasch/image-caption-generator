@@ -1,8 +1,10 @@
 import torch
 import json
 import os
+import evaluate
 from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
-from datasets import load_dataset, load_metric
+from datasets import load_dataset
+
 
 class MoondreamCaptioner:
     def __init__(self, torch_device = torch.device("cpu")):
@@ -12,9 +14,9 @@ class MoondreamCaptioner:
             "vikhyatk/moondream2", trust_remote_code=True, revision="2024-07-23"
         ).to(self._device)
 
-        self.bleu_metric = load_metric("bleu")
-        self.meteor_metric = load_metric("meteor")
-        self.rouge_metric = load_metric("rouge")
+        self.bleu_metric = evaluate.load("bleu")
+        self.meteor_metric = evaluate.load("meteor")
+        self.rouge_metric = evaluate.load("rouge")
 
         self._default_prompt = "Describe this image in a short yet informative sentence. It must be a concise caption, ignore the background."
 
