@@ -1,4 +1,5 @@
 from models.moondream import MoondreamCaptioner
+import torch
 
 def main():
     dataset_name = 'flickr30k'
@@ -7,7 +8,7 @@ def main():
     batch_size = 4
     save_steps = 500
 
-    captioner = MoondreamCaptioner()
+    captioner = MoondreamCaptioner(torch_device=torch.device("cuda" if torch.cuda.is_available() else "cpu"))
 
     captioner.fine_tune(
         dataset_name=dataset_name,

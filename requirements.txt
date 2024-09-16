@@ -9,3 +9,4 @@ numpy>=1.22.0
 fastapi>=0.70.0
 datasets
 evaluate
+einops
