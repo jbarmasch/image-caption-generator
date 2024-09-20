@@ -2,9 +2,9 @@ import torch
 import json
 import os
 import evaluate
-from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
+from transformers import AutoModelForCausalLM, AutoTokenizer, AdamW, get_scheduler
 from datasets import load_dataset
-
+from torch.utils.data import DataLoader
 
 class MoondreamCaptioner:
     def __init__(self, torch_device = torch.device("cpu")):
@@ -19,6 +19,12 @@ class MoondreamCaptioner:
         self.rouge_metric = evaluate.load("rouge")
 
         self._default_prompt = "Describe this image in a short yet informative sentence. It must be a concise caption, ignore the background."
+
+        self.metric_logs = {
+            "bleu": [],
+            "meteor": [],
+            "rougeL": []
+        }
 
     @property
     def moondream_tokenizer(self):
@@ -51,51 +57,63 @@ class MoondreamCaptioner:
         return self._moondream_model.answer_question(enc_image, prompt, self._moondream_tokenizer)
     
     def fine_tune(self, dataset_name='flickr30k', output_dir='./Training results/Weights/Moondream', num_train_epochs=3, batch_size=4, save_steps=500):
-        dataset = load_dataset(dataset_name)
+        # Load the train and validation datasets with streaming enabled
+        train_dataset = load_dataset(dataset_name, split='train', streaming=True)
+        val_dataset = load_dataset(dataset_name, split='validation', streaming=True)
 
         def preprocess_function(examples):
             inputs = self._moondream_tokenizer(examples['caption'], truncation=True, padding='max_length', max_length=128)
             return inputs
 
-        encoded_dataset = dataset.map(preprocess_function, batched=True)
+        # Preprocess datasets in streaming mode
+        processed_train_dataset = train_dataset.map(preprocess_function)
+        processed_val_dataset = val_dataset.map(preprocess_function)
 
-        train_dataset = encoded_dataset['train'].remove_columns(['caption']).with_format('torch')
-        val_dataset = encoded_dataset['validation'].remove_columns(['caption']).with_format('torch')
+        # Create DataLoaders for batch processing
+        train_dataloader = DataLoader(processed_train_dataset, batch_size=batch_size)
+        val_dataloader = DataLoader(processed_val_dataset, batch_size=batch_size)
 
-        training_args = TrainingArguments(
-            output_dir=output_dir,
-            evaluation_strategy="steps",
-            eval_steps=500,
-            per_device_train_batch_size=batch_size,
-            per_device_eval_batch_size=batch_size,
-            num_train_epochs=num_train_epochs,
-            logging_dir='./Training results/logs',
-            logging_steps=10,
-            save_steps=save_steps,
-            save_total_limit=3,
-            save_strategy="epoch",
-            learning_rate=5e-5,
-            weight_decay=0.01,
+        optimizer = AdamW(self._moondream_model.parameters(), lr=5e-5)
+        num_training_steps = num_train_epochs * len(train_dataloader)
+        lr_scheduler = get_scheduler(
+            "linear", optimizer=optimizer, num_warmup_steps=0, num_training_steps=num_training_steps
         )
 
-        trainer = Trainer(
-            model=self._moondream_model,
-            args=training_args,
-            train_dataset=train_dataset,
-            eval_dataset=val_dataset,
-            tokenizer=self._moondream_tokenizer,
-            compute_metrics=self.compute_metrics
-        )
+        self._moondream_model.train()
 
-        trainer.train()
+        for epoch in range(num_train_epochs):
+            for step, batch in enumerate(train_dataloader):
+                batch = {k: v.to(self._device) for k, v in batch.items()}
+                outputs = self._moondream_model(**batch)
+                loss = outputs.loss
+                loss.backward()
 
-        self._moondream_model.save_pretrained(output_dir)
-        self._moondream_tokenizer.save_pretrained(output_dir)
+                optimizer.step()
+                lr_scheduler.step()
+                optimizer.zero_grad()
 
-    def compute_metrics(self, eval_pred):
-        predictions, labels = eval_pred
-        decoded_preds = self._moondream_tokenizer.batch_decode(predictions, skip_special_tokens=True)
-        decoded_labels = self._moondream_tokenizer.batch_decode(labels, skip_special_tokens=True)
+                if step % save_steps == 0:
+                    self._moondream_model.eval()
+                    self.compute_metrics(val_dataloader)
+                    self._moondream_model.train()
+
+            self._moondream_model.save_pretrained(output_dir)
+            self._moondream_tokenizer.save_pretrained(output_dir)
+
+        self.save_metrics_to_file(self.metric_logs, output_file="metrics_log.json")
+
+    def compute_metrics(self, val_dataloader):
+        decoded_preds = []
+        decoded_labels = []
+
+        for val_batch in val_dataloader:
+            val_batch = {k: v.to(self._device) for k, v in val_batch.items()}
+            with torch.no_grad():
+                outputs = self._moondream_model(**val_batch)
+                predictions = outputs.logits.argmax(dim=-1)
+
+                decoded_preds.extend(self._moondream_tokenizer.batch_decode(predictions, skip_special_tokens=True))
+                decoded_labels.extend(self._moondream_tokenizer.batch_decode(val_batch['input_ids'], skip_special_tokens=True))
 
         decoded_labels = [[label] for label in decoded_labels]
 
@@ -103,15 +121,9 @@ class MoondreamCaptioner:
         meteor_result = self.meteor_metric.compute(predictions=decoded_preds, references=decoded_labels)
         rouge_result = self.rouge_metric.compute(predictions=decoded_preds, references=decoded_labels)
 
-        metrics = {
-            "bleu": bleu_result["bleu"],
-            "meteor": meteor_result["meteor"],
-            "rougeL": rouge_result["rougeL"].mid.fmeasure
-        }
-
-        self.save_metrics_to_file(metrics)
-
-        return metrics
+        self.metric_logs["bleu"].append(bleu_result["bleu"])
+        self.metric_logs["meteor"].append(meteor_result["meteor"])
+        self.metric_logs["rougeL"].append(rouge_result["rougeL"].mid.fmeasure)
 
     def save_metrics_to_file(self, metrics, output_file="metrics_log.json"):
         if os.path.exists(output_file):
