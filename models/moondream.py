@@ -5,13 +5,16 @@ import evaluate
 from transformers import AutoModelForCausalLM, AutoTokenizer, AdamW, get_scheduler
 from datasets import load_dataset
 from torch.utils.data import DataLoader
+from torch.optim import AdamW
+from transformers import get_scheduler
 
 class MoondreamCaptioner:
-    def __init__(self, torch_device = torch.device("cpu")):
+    def __init__(self, torch_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")):
+        print("CUDA available: ", torch.cuda.is_available())
         self._device = torch_device
-        self._moondream_tokenizer = AutoTokenizer.from_pretrained("vikhyatk/moondream2", revision="2024-07-23")
+        self._moondream_tokenizer = AutoTokenizer.from_pretrained("vikhyatk/moondream2", revision="2024-04-02")
         self._moondream_model = AutoModelForCausalLM.from_pretrained(
-            "vikhyatk/moondream2", trust_remote_code=True, revision="2024-07-23"
+            "vikhyatk/moondream2", trust_remote_code=True, revision="2024-04-02"#, attn_implementation="flash_attention_2"
         ).to(self._device)
 
         self.bleu_metric = evaluate.load("bleu")
@@ -56,51 +59,50 @@ class MoondreamCaptioner:
         enc_image = self._moondream_model.encode_image(image)
         return self._moondream_model.answer_question(enc_image, prompt, self._moondream_tokenizer)
     
-    def fine_tune(self, dataset_name='flickr30k', output_dir='./Training results/Weights/Moondream', num_train_epochs=3, batch_size=4, save_steps=500):
-        # Load the train and validation datasets with streaming enabled
-        train_dataset = load_dataset(dataset_name, split='train', streaming=True)
-        val_dataset = load_dataset(dataset_name, split='validation', streaming=True)
 
-        def preprocess_function(examples):
-            inputs = self._moondream_tokenizer(examples['caption'], truncation=True, padding='max_length', max_length=128)
-            return inputs
+    def fine_tune2(self, tokenizer, train_loader, val_loader, num_epochs=5, learning_rate=5e-5):
+        device = self._device
+        self._moondream_model.to(device)
+    
+        optimizer = torch.optim.AdamW(self._moondream_model.parameters(), lr=learning_rate)
+        criterion = torch.nn.CrossEntropyLoss()
 
-        # Preprocess datasets in streaming mode
-        processed_train_dataset = train_dataset.map(preprocess_function)
-        processed_val_dataset = val_dataset.map(preprocess_function)
+        for epoch in range(num_epochs):
+            self._moondream_model.train()
+            total_loss = 0
 
-        # Create DataLoaders for batch processing
-        train_dataloader = DataLoader(processed_train_dataset, batch_size=batch_size)
-        val_dataloader = DataLoader(processed_val_dataset, batch_size=batch_size)
+            for images, captions in train_loader:
+                images = images.to(device)
+                captions = captions.to(device)
 
-        optimizer = AdamW(self._moondream_model.parameters(), lr=5e-5)
-        num_training_steps = num_train_epochs * len(train_dataloader)
-        lr_scheduler = get_scheduler(
-            "linear", optimizer=optimizer, num_warmup_steps=0, num_training_steps=num_training_steps
-        )
-
-        self._moondream_model.train()
-
-        for epoch in range(num_train_epochs):
-            for step, batch in enumerate(train_dataloader):
-                batch = {k: v.to(self._device) for k, v in batch.items()}
-                outputs = self._moondream_model(**batch)
+                optimizer.zero_grad()
+                outputs = self._moondream_model.text_model(images, labels=captions)
                 loss = outputs.loss
                 loss.backward()
-
                 optimizer.step()
-                lr_scheduler.step()
-                optimizer.zero_grad()
 
-                if step % save_steps == 0:
-                    self._moondream_model.eval()
-                    self.compute_metrics(val_dataloader)
-                    self._moondream_model.train()
+                total_loss += loss.item()
 
-            self._moondream_model.save_pretrained(output_dir)
-            self._moondream_tokenizer.save_pretrained(output_dir)
+            avg_train_loss = total_loss / len(train_loader)
+            print(f"Epoch {epoch + 1}/{num_epochs}, Training Loss: {avg_train_loss:.4f}")
 
-        self.save_metrics_to_file(self.metric_logs, output_file="metrics_log.json")
+            # Validation
+            self._moondream_model.eval()
+            total_val_loss = 0
+
+            with torch.no_grad():
+                for images, captions in val_loader:
+                    images = images.to(device)
+                    captions = captions.to(device)
+
+                    outputs = self._moondream_model.text_model(images, labels=captions)
+                    val_loss = outputs.loss
+                    total_val_loss += val_loss.item()
+
+            avg_val_loss = total_val_loss / len(val_loader)
+            print(f"Epoch {epoch + 1}/{num_epochs}, Validation Loss: {avg_val_loss:.4f}")
+
+        return self._moondream_model
 
     def compute_metrics(self, val_dataloader):
         decoded_preds = []
