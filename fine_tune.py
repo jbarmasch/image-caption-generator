@@ -131,7 +131,7 @@ print("Dataset loaded")
 train_dataset, val_dataset, test_dataset = dataset.get_datasets()
 train_loader, val_loader, test_loader = dataset.get_dataloaders(BATCH_SIZE, collate_fn)
 print("Loaders loaded")
-train_len = 31000
+train_len = 29000
 print("Data loaded")
 
 
