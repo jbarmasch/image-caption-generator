@@ -30,12 +30,12 @@ GRAD_ACCUM_STEPS = 1
 LR = 3e-5
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-DTYPE = torch.float32 if torch.cuda.is_available() else torch.float32 # CPU doesn't support float16
+DTYPE = torch.float16 if torch.cuda.is_available() else torch.float32 # CPU doesn't support float16
 IMG_TOKENS = 729
 ANSWER_EOS = "<|endoftext|>"
 OUTPUT_DIR = './Training results/Weights/Moondream'
 
-captioner = MoondreamCaptioner(torch_device=DEVICE)
+captioner = MoondreamCaptioner(torch_device=DEVICE, dtype = DTYPE)
 moondream = captioner._moondream_model
 tokenizer = captioner._moondream_tokenizer
 print("Model loaded")
