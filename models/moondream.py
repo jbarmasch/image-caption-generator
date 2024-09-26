@@ -12,7 +12,7 @@ class MoondreamCaptioner:
     def __init__(self, torch_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")):
         print("CUDA available: ", torch.cuda.is_available())
         self._device = torch_device
-        self._moondream_tokenizer = AutoTokenizer.from_pretrained("vikhyatk/moondream2", revision="2024-04-02")
+        self._moondream_tokenizer = AutoTokenizer.from_pretrained("vikhyatk/moondream2", revision="2024-04-02").to(self.device)
         self._moondream_model = AutoModelForCausalLM.from_pretrained(
             "vikhyatk/moondream2", trust_remote_code=True, revision="2024-04-02"#, attn_implementation="flash_attention_2"
         ).to(self._device)
