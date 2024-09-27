@@ -164,5 +164,6 @@ for epoch in range(EPOCHS):
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
 
-moondream.text_model.save_pretrained(OUTPUT_DIR)
+moondream.save_pretrained(OUTPUT_DIR)
+tokenizer.save_pretrained(OUTPUT_DIR)
 print("Model saved")
