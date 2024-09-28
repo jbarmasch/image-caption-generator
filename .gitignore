@@ -152,8 +152,7 @@ cython_debug/
 data
 
 # NN weights
-Training results/Weights/CNN/*
-Training results/Weights/LSTM/*
+Training results/Weights/*
 !Training results/Weights/CNN/.gitkeep
 !Training results/Weights/LSTM/.gitkeep
 Training results/Graphs/Loss/*
