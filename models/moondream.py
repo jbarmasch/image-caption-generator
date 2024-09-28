@@ -18,7 +18,7 @@ class MoondreamCaptioner:
         print("Loading model...")
         print(f"Dtype: {dtype}")
         self._moondream_model = AutoModelForCausalLM.from_pretrained(
-            "vikhyatk/moondream2", trust_remote_code=True, revision="2024-04-02", torch_dtype = dtype#, attn_implementation="flash_attention_2"
+            "vikhyatk/moondream2", trust_remote_code=True, revision="2024-04-02", torch_dtype = dtype
         ).to(self._device)
         print("Model loaded")
 

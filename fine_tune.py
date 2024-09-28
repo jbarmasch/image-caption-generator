@@ -14,7 +14,7 @@ EPOCHS = 1
 # Number of samples to process in each batch. Set this to the highest value that doesn't cause an
 # out-of-memory error. Decrease it if you're running out of memory. Batch size 8 currently uses around
 # 15 GB of GPU memory during fine-tuning.
-BATCH_SIZE = 8
+BATCH_SIZE = 16
 
 # Number of batches to process before updating the model. You can use this to simulate a higher batch
 # size than your GPU can handle. Set this to 1 to disable gradient accumulation.
@@ -34,7 +34,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DTYPE = torch.float16 if torch.cuda.is_available() else torch.float32 # CPU doesn't support float16
 IMG_TOKENS = 729
 ANSWER_EOS = "<|endoftext|>"
-OUTPUT_DIR = './Training results/Weights/Moondream'
+OUTPUT_DIR = './Training results/Weights/Moondream/Current'
 
 captioner = MoondreamCaptioner(torch_device=DEVICE, dtype = DTYPE)
 moondream = captioner._moondream_model
@@ -166,6 +166,6 @@ for epoch in range(EPOCHS):
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
 
-moondream.save_pretrained(OUTPUT_DIR)
-tokenizer.save_pretrained(OUTPUT_DIR)
+moondream.save_pretrained(OUTPUT_DIR + "/model")
+tokenizer.save_pretrained(OUTPUT_DIR + "/tokenizer")
 print("Model saved")
