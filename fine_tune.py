@@ -169,6 +169,7 @@ for epoch in range(EPOCHS):
         i += 1
 
         loss = compute_loss(batch)
+        current_loss = loss.item()
         loss.backward()
 
         if i % GRAD_ACCUM_STEPS == 0:
@@ -178,7 +179,6 @@ for epoch in range(EPOCHS):
             lr = lr_schedule(i / GRAD_ACCUM_STEPS, total_steps)
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
-        current_loss = loss.item()
 
     # Run validation after each epoch
     avg_val_loss = validate(val_loader)
