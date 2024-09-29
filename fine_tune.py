@@ -36,7 +36,7 @@ IMG_TOKENS = 729
 ANSWER_EOS = "<|endoftext|>"
 OUTPUT_DIR = './Training results/Weights/Moondream/Current'
 
-captioner = MoondreamCaptioner(torch_device=DEVICE, dtype = DTYPE)
+captioner = MoondreamCaptioner(torch_device=DEVICE, dtype = DTYPE, model_path= OUTPUT_DIR + '/model', tokenizer_path = OUTPUT_DIR + '/tokenizer')
 moondream = captioner._moondream_model
 tokenizer = captioner._moondream_tokenizer
 tokenizer.pre_tokenizer = Whitespace()
