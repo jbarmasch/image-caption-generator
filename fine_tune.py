@@ -164,7 +164,7 @@ best_val_loss = float('inf')
 i = 0
 for epoch in range(EPOCHS):
     moondream.text_model.train()  # Set model back to training mode
-    loss = float('inf')
+    loss = 0
     for batch in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{EPOCHS} Loss: {loss:.4f}"):
         i += 1
 
