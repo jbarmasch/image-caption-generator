@@ -131,6 +131,8 @@ train_dataset, val_dataset, test_dataset = dataset.get_datasets()
 train_loader, val_loader, test_loader = dataset.get_dataloaders(BATCH_SIZE, collate_fn)
 print("Loaders loaded")
 train_len = 29000
+val_len = 1014
+test_len = 1000
 print("Data loaded")
 
 
@@ -155,7 +157,7 @@ def validate(val_loader):
             val_loss = compute_loss(batch)
             total_val_loss += val_loss.item()
 
-    avg_val_loss = total_val_loss / len(val_loader)
+    avg_val_loss = total_val_loss / val_len
     return avg_val_loss
 
 best_val_loss = float('inf')
