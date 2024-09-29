@@ -28,7 +28,7 @@ GRAD_ACCUM_STEPS = 1
 # Note that we linearly warm the learning rate up from 0.1 * LR to LR over the first 10% of the
 # training run, and then decay it back to 0.1 * LR over the last 90% of the training run using a
 # cosine schedule.
-LR = 3e-5
+LR = 3e-4
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DTYPE = torch.float16 if torch.cuda.is_available() else torch.float32 # CPU doesn't support float16
