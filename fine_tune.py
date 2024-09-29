@@ -177,6 +177,7 @@ for epoch in range(EPOCHS):
             lr = lr_schedule(i / GRAD_ACCUM_STEPS, total_steps)
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
+        print(f"Training Loss: {loss.item():.4f}")
 
     # Run validation after each epoch
     avg_val_loss = validate(val_loader)
