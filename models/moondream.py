@@ -18,8 +18,8 @@ class MoondreamCaptioner:
         print("Loading model...")
         print(f"Dtype: {dtype}")
         self._moondream_model = AutoModelForCausalLM.from_pretrained(
-            "vikhyatk/moondream2", trust_remote_code=True, revision="2024-05-20", torch_dtype = dtype, device_map={"", self._device}#attn_implementation="flash_attention"
-        )
+            "vikhyatk/moondream2", trust_remote_code=True, revision="2024-05-20", torch_dtype = dtype, #attn_implementation="flash_attention"
+        ).to(self._device)
         print("Model loaded")
 
         self.bleu_metric = evaluate.load("bleu")
