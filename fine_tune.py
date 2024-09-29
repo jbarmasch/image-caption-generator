@@ -9,7 +9,7 @@ from tokenizers.pre_tokenizers import Whitespace
 
 # Number of times to repeat the training dataset. Increasing this may cause the model to overfit or
 # lose generalization due to catastrophic forgetting. Decreasing it may cause the model to underfit.
-EPOCHS = 2
+EPOCHS = 3
 
 # Number of samples to process in each batch. Set this to the highest value that doesn't cause an
 # out-of-memory error. Decrease it if you're running out of memory. Batch size 8 currently uses around
