@@ -36,7 +36,7 @@ IMG_TOKENS = 729
 ANSWER_EOS = "<|endoftext|>"
 OUTPUT_DIR = './Training results/Weights/Moondream/Current'
 
-captioner = MoondreamCaptioner(torch_device=DEVICE, dtype = DTYPE, model_path= OUTPUT_DIR + '/model', tokenizer_path = OUTPUT_DIR + '/tokenizer')
+captioner = MoondreamCaptioner(torch_device=DEVICE, dtype = DTYPE)
 moondream = captioner._moondream_model
 tokenizer = captioner._moondream_tokenizer
 tokenizer.pre_tokenizer = Whitespace()
@@ -46,7 +46,7 @@ def collate_fn(batch):
     images = [sample['image'] for sample in batch]
     preprocessed_images = [moondream.vision_encoder.preprocess(image) for image in images]
     images = torch.stack(preprocessed_images)
-    images = rearrange(images, "b c (h p1) (w p2) -> b (h w) (c p1 p2)", p1=14, p2=14)
+    # images = rearrange(images, "b c (h p1) (w p2) -> b (h w) (c p1 p2)", p1=14, p2=14)
 
     labels_acc = []
     tokens_acc = []
