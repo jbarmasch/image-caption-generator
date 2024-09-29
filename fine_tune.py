@@ -164,12 +164,10 @@ best_val_loss = float('inf')
 i = 0
 for epoch in range(EPOCHS):
     moondream.text_model.train()  # Set model back to training mode
-    current_loss = float('inf')
-    for batch in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{EPOCHS} Loss: {current_loss:.4f}"):
+    for batch in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{EPOCHS}"):
         i += 1
 
         loss = compute_loss(batch)
-        current_loss = loss.item()
         loss.backward()
 
         if i % GRAD_ACCUM_STEPS == 0:
@@ -179,6 +177,7 @@ for epoch in range(EPOCHS):
             lr = lr_schedule(i / GRAD_ACCUM_STEPS, total_steps)
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
+        print(f"\nLoss: {loss.item()}")
 
     # Run validation after each epoch
     avg_val_loss = validate(val_loader)
