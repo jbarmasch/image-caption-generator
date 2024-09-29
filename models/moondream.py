@@ -13,12 +13,12 @@ class MoondreamCaptioner:
         print("CUDA available: ", torch.cuda.is_available())
         self._device = torch_device
         print("Loading tokenizer...")
-        self._moondream_tokenizer = AutoTokenizer.from_pretrained("vikhyatk/moondream2", revision="2024-05-20")
+        self._moondream_tokenizer = AutoTokenizer.from_pretrained("vikhyatk/moondream2", revision="2024-04-02")
         print("Tokenizer loaded")
         print("Loading model...")
         print(f"Dtype: {dtype}")
         self._moondream_model = AutoModelForCausalLM.from_pretrained(
-            "vikhyatk/moondream2", trust_remote_code=True, revision="2024-05-20", torch_dtype = dtype, attn_implementation="flash_attention_2"
+            "vikhyatk/moondream2", trust_remote_code=True, revision="2024-04-02", torch_dtype = dtype, attn_implementation="flash_attention_2"
         ).to(self._device)
         print("Model loaded")
 
