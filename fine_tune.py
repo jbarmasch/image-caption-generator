@@ -178,7 +178,6 @@ for epoch in range(EPOCHS):
             lr = lr_schedule(i / GRAD_ACCUM_STEPS, total_steps)
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
-        print(f"\nLoss: {loss.item()}")
         epoch_loss = loss.item()
     
     print(f"\nEpoch {epoch + 1}/{EPOCHS}, Training Loss: {epoch_loss:.4f}")
