@@ -9,7 +9,7 @@ from tokenizers.pre_tokenizers import Whitespace
 
 # Number of times to repeat the training dataset. Increasing this may cause the model to overfit or
 # lose generalization due to catastrophic forgetting. Decreasing it may cause the model to underfit.
-EPOCHS = 1
+EPOCHS = 2
 
 # Number of samples to process in each batch. Set this to the highest value that doesn't cause an
 # out-of-memory error. Decrease it if you're running out of memory. Batch size 8 currently uses around
@@ -46,7 +46,7 @@ def collate_fn(batch):
     images = [sample['image'] for sample in batch]
     preprocessed_images = [moondream.vision_encoder.preprocess(image) for image in images]
     images = torch.stack(preprocessed_images)
-    # images = rearrange(images, "b c (h p1) (w p2) -> b (h w) (c p1 p2)", p1=14, p2=14)
+    images = rearrange(images, "b c (h p1) (w p2) -> b (h w) (c p1 p2)", p1=14, p2=14)
 
     labels_acc = []
     tokens_acc = []
@@ -124,9 +124,6 @@ def lr_schedule(step, max_steps):
     else:
         return 0.1 * LR + 0.9 * LR * (1 + math.cos(math.pi * (x - 0.1))) / 2
 
-
-save_steps = 500
-
 print("Loading data")
 dataset = CustomDataset()
 print("Dataset loaded")
@@ -150,8 +147,21 @@ optimizer = Adam8bit(
     eps=1e-6
 )
 
+def validate(val_loader):
+    moondream.text_model.eval()  # Set model to evaluation mode
+    total_val_loss = 0
+    with torch.no_grad():
+        for batch in tqdm(val_loader, desc="Validating"):
+            val_loss = compute_loss(batch)
+            total_val_loss += val_loss.item()
+
+    avg_val_loss = total_val_loss / len(val_loader)
+    return avg_val_loss
+
+best_val_loss = float('inf')
 i = 0
 for epoch in range(EPOCHS):
+    moondream.text_model.train()  # Set model back to training mode
     for batch in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{EPOCHS}"):
         i += 1
 
@@ -165,6 +175,17 @@ for epoch in range(EPOCHS):
             lr = lr_schedule(i / GRAD_ACCUM_STEPS, total_steps)
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
+
+    # Run validation after each epoch
+    avg_val_loss = validate(val_loader)
+    print(f"Validation Loss after epoch {epoch + 1}: {avg_val_loss}")
+
+    # Save the model if validation loss improves
+    if avg_val_loss < best_val_loss:
+        best_val_loss = avg_val_loss
+        moondream.save_pretrained(OUTPUT_DIR + f"/best_model_epoch_{epoch + 1}")
+        tokenizer.save_pretrained(OUTPUT_DIR + f"/tokenizer_epoch_{epoch + 1}")
+        print(f"Best model saved at epoch {epoch + 1}")
 
 moondream.save_pretrained(OUTPUT_DIR + "/model")
 tokenizer.save_pretrained(OUTPUT_DIR + "/tokenizer")
