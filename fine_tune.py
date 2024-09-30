@@ -9,12 +9,12 @@ from tokenizers.pre_tokenizers import Whitespace
 
 # Number of times to repeat the training dataset. Increasing this may cause the model to overfit or
 # lose generalization due to catastrophic forgetting. Decreasing it may cause the model to underfit.
-EPOCHS = 3
+EPOCHS = 1
 
 # Number of samples to process in each batch. Set this to the highest value that doesn't cause an
 # out-of-memory error. Decrease it if you're running out of memory. Batch size 8 currently uses around
 # 15 GB of GPU memory during fine-tuning.
-BATCH_SIZE = 16
+BATCH_SIZE = 8
 
 # Number of batches to process before updating the model. You can use this to simulate a higher batch
 # size than your GPU can handle. Set this to 1 to disable gradient accumulation.
@@ -28,7 +28,7 @@ GRAD_ACCUM_STEPS = 1
 # Note that we linearly warm the learning rate up from 0.1 * LR to LR over the first 10% of the
 # training run, and then decay it back to 0.1 * LR over the last 90% of the training run using a
 # cosine schedule.
-LR = 3e-4
+LR = 3e-6
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DTYPE = torch.float16 if torch.cuda.is_available() else torch.float32 # CPU doesn't support float16
