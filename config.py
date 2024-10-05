@@ -1,4 +1,5 @@
 import torch
+from pathlib import Path
 
 ORIGINAL_MODEL = "vikhyatk/moondream2"
 MOONDREAM_VERSION = "2024-07-23"
@@ -16,3 +17,5 @@ TRAIN_LEN = 29000
 VAL_LEN = 1014
 TEST_LEN = 1000
 ADAM_EPS = 1e-6
+IMAGE_DIR = Path("data/images/processed")
+IMAGE_PATHS = list(IMAGE_DIR.glob("*.jpg")) + list(IMAGE_DIR.glob("*.png")) + list(IMAGE_DIR.glob("*.jpeg"))

@@ -147,15 +147,16 @@ for epoch in range(EPOCHS):
     print(f"\nEpoch {epoch + 1}/{EPOCHS}, Training Loss: {epoch_loss:.4f}")
 
     # Run validation after each epoch
-    avg_val_loss = validate(val_loader)
-    print(f"Validation Loss after epoch {epoch + 1}: {avg_val_loss}")
+    if (EPOCHS != 1):
+        avg_val_loss = validate(val_loader)
+        print(f"Validation Loss after epoch {epoch + 1}: {avg_val_loss}")
 
-    # Save the model if validation loss improves
-    if avg_val_loss < best_val_loss:
-        best_val_loss = avg_val_loss
-        moondream.save_pretrained(OUTPUT_DIR + f"/best_model_epoch_{epoch + 1}")
-        tokenizer.save_pretrained(OUTPUT_DIR + f"/tokenizer_epoch_{epoch + 1}")
-        print(f"Best model saved at epoch {epoch + 1}")
+        # Save the model if validation loss improves
+        if avg_val_loss < best_val_loss:
+            best_val_loss = avg_val_loss
+            moondream.save_pretrained(OUTPUT_DIR + f"/best_model_epoch_{epoch + 1}")
+            tokenizer.save_pretrained(OUTPUT_DIR + f"/tokenizer_epoch_{epoch + 1}")
+            print(f"Best model saved at epoch {epoch + 1}")
 
 moondream.save_pretrained(OUTPUT_DIR + "/model")
 tokenizer.save_pretrained(OUTPUT_DIR + "/tokenizer")
