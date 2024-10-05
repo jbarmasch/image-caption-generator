@@ -2,24 +2,31 @@ import torch
 import json
 import os
 import evaluate
-from transformers import AutoModelForCausalLM, AutoTokenizer, AdamW, get_scheduler
-from datasets import load_dataset
-from torch.utils.data import DataLoader
-from torch.optim import AdamW
-from transformers import get_scheduler
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from config import *
 
 class MoondreamCaptioner:
-    def __init__(self, torch_device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), dtype = torch.float32, model_path = None, tokenizer_path = None):
+    def __init__(self, torch_device = DEVICE, dtype = DTYPE, model_path = None, tokenizer_path = None):
         print("CUDA available: ", torch.cuda.is_available())
         self._device = torch_device
         print("Loading tokenizer...")
-        self._moondream_tokenizer = AutoTokenizer.from_pretrained("vikhyatk/moondream2", revision="2024-04-02")
+        if (tokenizer_path is None):
+            self._moondream_tokenizer = AutoTokenizer.from_pretrained(ORIGINAL_MODEL, revision=MOONDREAM_VERSION)
+        else:
+            self._moondream_tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
         print("Tokenizer loaded")
         print("Loading model...")
         print(f"Dtype: {dtype}")
-        self._moondream_model = AutoModelForCausalLM.from_pretrained(
-            "vikhyatk/moondream2", trust_remote_code=True, revision="2024-04-02", torch_dtype = dtype, #attn_implementation="flash_attention"
-        ).to(self._device)
+        if (model_path is None):
+            self._moondream_model = AutoModelForCausalLM.from_pretrained(ORIGINAL_MODEL, revision=MOONDREAM_VERSION, trust_remote_code=True, torch_dtype=dtype, device_map={"": self._device})
+        else:
+            self._moondream_model = AutoModelForCausalLM.from_pretrained(
+                model_path,
+                config= model_path + "/config.json",
+                state_dict=None,
+                trust_remote_code=True,
+                # ignore_mismatched_sizes=True
+            ).to(self._device)
         print("Model loaded")
 
         self.bleu_metric = evaluate.load("bleu")
@@ -62,7 +69,7 @@ class MoondreamCaptioner:
         if prompt is None:
             prompt = self._default_prompt
         enc_image = self._moondream_model.encode_image(image)
-        return self._moondream_model.answer_question(enc_image, prompt, self._moondream_tokenizer)
+        return self._moondream_model.answer_question(enc_image, prompt, self._moondream_tokenizer, temperature=0.1, do_sample=True)
     
 
     def fine_tune2(self, tokenizer, train_loader, val_loader, num_epochs=5, learning_rate=5e-5):
