@@ -3,6 +3,7 @@ import json
 import os
 import evaluate
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from pathlib import Path
 from config import *
 
 class MoondreamCaptioner:
@@ -22,7 +23,7 @@ class MoondreamCaptioner:
         else:
             self._moondream_model = AutoModelForCausalLM.from_pretrained(
                 model_path,
-                config= model_path + "/config.json",
+                config= model_path / Path("/config.json"),
                 state_dict=None,
                 trust_remote_code=True,
                 # ignore_mismatched_sizes=True

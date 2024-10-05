@@ -2,7 +2,7 @@ import torch
 
 ORIGINAL_MODEL = "vikhyatk/moondream2"
 MOONDREAM_VERSION = "2024-07-23"
-EPOCHS = 1
+EPOCHS = 3
 BATCH_SIZE = 16
 GRAD_ACCUM_STEPS = 1
 LR = 3e-5
