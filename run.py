@@ -59,10 +59,10 @@ if __name__ == "__main__":
     
     # Initialize the captioners
     # llava = llavaCaptioner()
-    blip = BLIPCaptioner(torch_device=torch_device)
+    # blip = BLIPCaptioner(torch_device=torch_device)
     print("BLIP model loaded")
     moondream = MoondreamCaptioner(torch_device=torch_device)
     print("Moondream model loaded")
     
     # Generate captions and compare performance
-    generate_captions(image_paths, [blip, moondream], get_statistics=False)
+    generate_captions(image_paths, [moondream], get_statistics=False)

@@ -1,7 +1,36 @@
 import os
 import shutil
+from config import *
 from pathlib import Path
 import numpy as np
+
+def save_metrics(metrics, output_file=METRICS_DIR, epochs=EPOCHS, batch_size=BATCH_SIZE, lr=LR):
+    """
+    Save metrics to a JSON file.
+    
+    Parameters:
+        metrics (dict): Dictionary containing metrics.
+        output_file (str): Path to the output file.
+    """
+    output_file = output_file / Path(f"metrics_{epochs}epochs_{batch_size}batchsize_{lr}lr.json")
+    import json
+    with open(output_file, "w") as f:
+        json.dump(metrics, f, indent=4)
+
+def save_rouge_metrics(rouge_metrics, output_file=METRICS_DIR / Path("rouge/"), epochs=EPOCHS, batch_size=BATCH_SIZE, lr=LR):
+    """
+    Save ROUGE metrics to a JSON file.
+    
+    Parameters:
+        rouge_metrics (dict): Dictionary containing ROUGE metrics.
+        output_file (str): Path to the output file.
+    """
+    output_file = output_file / Path(f"rouge_metrics_{epochs}epochs_{batch_size}batchsize_{lr}lr.json")
+    import json
+    with open(output_file, "w") as f:
+        json.dump(rouge_metrics, f, indent=4)
+
+
 
 def compute_statistics(execution_times):
     """
