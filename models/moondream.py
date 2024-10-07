@@ -4,7 +4,7 @@ import os
 import evaluate
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from config import *
-from rouge import Rouge
+from rouge_metric import PyRouge
 
 class MoondreamCaptioner:
     def __init__(self, torch_device = DEVICE, dtype = DTYPE, model_path = None, tokenizer_path = None):
@@ -104,7 +104,7 @@ class MoondreamCaptioner:
             json.dump(data, f, indent=4)
     
     def get_rouge_metrics(self, hypothesis, references):
-        rouge = Rouge()
-        scores = rouge.get_scores(hypothesis, references)
+        rouge = PyRouge(rouge_n=(1, 2, 4), rouge_l=True, rouge_w=True, rouge_w_weight=1.2, rouge_s=True, rouge_su=True, skip_gap=4)
+        scores = rouge.evaluate(hypothesis, references)
         self.metric_logs["rouge"].append(scores)
         return scores

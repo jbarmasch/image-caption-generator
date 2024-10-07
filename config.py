@@ -22,5 +22,5 @@ TEST_LEN = 1000
 ADAM_EPS = 1e-6
 
 # Metrics
-MAX_METRIC_ITER = 50
+MAX_METRIC_ITER = 3
 METRICS_DIR = Path('./Training results/Metrics/Moondream')
