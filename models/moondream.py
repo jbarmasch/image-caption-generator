@@ -3,6 +3,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from config import *
 from rouge_metric import PyRouge
 from nltk.translate.bleu_score import sentence_bleu
+from nltk.translate import meteor
 from nltk import word_tokenize
 
 class MoondreamCaptioner:
@@ -79,3 +80,12 @@ class MoondreamCaptioner:
         score = sentence_bleu(references, hypothesis)
         self.metric_logs["bleu"].append(score)
         return score
+    
+    def get_meteor_metrics(self, hypothesis, references):
+        '''
+        candidate, reference: tokenized list of words in the sentence
+        '''
+        references = [word_tokenize(reference) for reference in references]
+        hypothesis = word_tokenize(hypothesis)
+        meteor_score = round(meteor([hypothesis],references), 4)
+        return meteor_score
