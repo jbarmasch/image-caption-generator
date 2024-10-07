@@ -87,5 +87,5 @@ class MoondreamCaptioner:
         '''
         references = [word_tokenize(reference) for reference in references]
         hypothesis = word_tokenize(hypothesis)
-        meteor_score = round(meteor([hypothesis],references), 4)
+        meteor_score = round(meteor(references, hypothesis), 4)
         return meteor_score
