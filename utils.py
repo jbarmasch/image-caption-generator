@@ -25,7 +25,7 @@ def save_single_metric(metric_name, metric, output_file=METRICS_DIR, epochs=EPOC
         rouge_metrics (dict): Dictionary containing ROUGE metrics.
         output_file (str): Path to the output file.
     """
-    output_file = output_file / Path(f"/{metric_name}/{metric_name}_metrics_{epochs}epochs_{batch_size}batchsize_{lr}lr.json")
+    output_file = output_file / Path(f"{metric_name}/{metric_name}_metrics_{epochs}epochs_{batch_size}batchsize_{lr}lr.json")
     import json
     with open(output_file, "w") as f:
         json.dump(metric, f, indent=4)

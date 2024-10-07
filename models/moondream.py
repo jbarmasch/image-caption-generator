@@ -65,7 +65,7 @@ class MoondreamCaptioner:
         if prompt is None:
             prompt = self._default_prompt
         enc_image = self._moondream_model.encode_image(image)
-        return self._moondream_model.answer_question(enc_image, prompt, self._moondream_tokenizer, temperature=0.1, do_sample=True)
+        return self._moondream_model.answer_question(enc_image, prompt, self._moondream_tokenizer)#, temperature=0.1, do_sample=True)
     
     def get_rouge_metrics(self, hypothesis, references):
         rouge = PyRouge(rouge_n=(1, 2, 4), rouge_l=True, rouge_w=True, rouge_w_weight=1.2, rouge_s=True, rouge_su=True, skip_gap=4)
