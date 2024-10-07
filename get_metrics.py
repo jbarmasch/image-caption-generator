@@ -35,12 +35,18 @@ for temp in TEMPERATURES:
         if image_name not in metrics:
             metrics[image_name] = {}
         metrics[image_name] = {
+            "caption": hypothesis,
+            "references": references,
             "rouge": rouge_metrics[i],
             "bleu": bleu_metrics[i],
             "meteor": meteor_metrics[i]
         }
         i += 1
+    i = 0
     save_single_metric(metric_name = 'rouge', metric=rouge_metrics, temperature=temp)
     save_single_metric(metric_name = 'bleu', metric=bleu_metrics, temperature=temp)
     save_single_metric(metric_name = 'meteor', metric=meteor_metrics, temperature=temp)
     save_metrics(metrics=metrics, temperature=temp)
+    rouge_metrics = []
+    bleu_metrics = []
+    meteor_metrics = []

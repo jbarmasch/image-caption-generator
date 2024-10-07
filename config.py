@@ -22,6 +22,6 @@ TEST_LEN = 1000
 ADAM_EPS = 1e-6
 
 # Metrics
-MAX_METRIC_ITER = 3
+MAX_METRIC_ITER = 150
 METRICS_DIR = Path('./Training results/Metrics/Moondream')
 TEMPERATURES = [None, 0.3, 0.7]
