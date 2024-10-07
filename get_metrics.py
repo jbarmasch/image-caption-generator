@@ -18,29 +18,29 @@ metrics = {}
 rouge_metrics = []
 bleu_metrics = []
 meteor_metrics = []
-for sample in tqdm(test_dataset, desc=f"Iterating over {MAX_METRIC_ITER} photos"):
-    if i >= MAX_METRIC_ITER:
-        break
-    image = sample['image']
-    image_name = sample['filename']
-    moondream_caption = captioner.get_caption(image)
-    hypothesis = moondream_caption
-    references = sample['caption']
+for temp in TEMPERATURES:
+    for sample in tqdm(test_dataset, desc=f"Iterating over {MAX_METRIC_ITER} photos for temperature {temp}"):
+        if i >= MAX_METRIC_ITER:
+            break
+        image = sample['image']
+        image_name = sample['filename']
+        moondream_caption = captioner.get_caption(image, temperature=temp)
+        hypothesis = moondream_caption
+        references = sample['caption']
 
-    rouge_metrics.append(captioner.get_rouge_metrics(hypothesis, references))
-    bleu_metrics.append(captioner.get_bleu_metrics(hypothesis, references))
-    meteor_metrics.append(captioner.get_meteor_metrics(hypothesis, references))
+        rouge_metrics.append(captioner.get_rouge_metrics(hypothesis, references))
+        bleu_metrics.append(captioner.get_bleu_metrics(hypothesis, references))
+        meteor_metrics.append(captioner.get_meteor_metrics(hypothesis, references))
 
-    if image_name not in metrics:
-        metrics[image_name] = {}
-    metrics[image_name] = {
-        "rouge": rouge_metrics[i],
-        "bleu": bleu_metrics[i],
-        "meteor": meteor_metrics[i]
-    }
-    i += 1
-
-save_single_metric(metric_name = 'rouge', metric=rouge_metrics)
-save_single_metric(metric_name = 'bleu', metric=bleu_metrics)
-save_single_metric(metric_name = 'meteor', metric=meteor_metrics)
-save_metrics(metrics=metrics)
+        if image_name not in metrics:
+            metrics[image_name] = {}
+        metrics[image_name] = {
+            "rouge": rouge_metrics[i],
+            "bleu": bleu_metrics[i],
+            "meteor": meteor_metrics[i]
+        }
+        i += 1
+    save_single_metric(metric_name = 'rouge', metric=rouge_metrics, temperature=temp)
+    save_single_metric(metric_name = 'bleu', metric=bleu_metrics, temperature=temp)
+    save_single_metric(metric_name = 'meteor', metric=meteor_metrics, temperature=temp)
+    save_metrics(metrics=metrics, temperature=temp)

@@ -62,11 +62,14 @@ class MoondreamCaptioner:
     def device(self, device):
         self._device = device
 
-    def get_caption(self, image, prompt=None):
+    def get_caption(self, image, prompt=None, temperature=None):
         if prompt is None:
             prompt = self._default_prompt
         enc_image = self._moondream_model.encode_image(image)
-        return self._moondream_model.answer_question(enc_image, prompt, self._moondream_tokenizer)#, temperature=0.1, do_sample=True)
+        if temperature is None:
+            return self._moondream_model.answer_question(enc_image, prompt, self._moondream_tokenizer)
+        else:
+            return self._moondream_model.answer_question(enc_image, prompt, self._moondream_tokenizer, temperature=temperature, do_sample=True)
     
     def get_rouge_metrics(self, hypothesis, references):
         rouge = PyRouge(rouge_n=(1, 2, 4), rouge_l=True, rouge_w=True, rouge_w_weight=1.2, rouge_s=True, rouge_su=True, skip_gap=4)
@@ -82,9 +85,6 @@ class MoondreamCaptioner:
         return score
     
     def get_meteor_metrics(self, hypothesis, references):
-        '''
-        candidate, reference: tokenized list of words in the sentence
-        '''
         references = [word_tokenize(reference) for reference in references]
         hypothesis = word_tokenize(hypothesis)
         meteor_score = round(meteor(references, hypothesis), 4)

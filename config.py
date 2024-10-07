@@ -24,3 +24,4 @@ ADAM_EPS = 1e-6
 # Metrics
 MAX_METRIC_ITER = 3
 METRICS_DIR = Path('./Training results/Metrics/Moondream')
+TEMPERATURES = [None, 0.3, 0.7]
