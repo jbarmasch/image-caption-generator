@@ -17,7 +17,7 @@ def save_metrics(metrics, output_file=METRICS_DIR, epochs=EPOCHS, batch_size=BAT
     with open(output_file, "w") as f:
         json.dump(metrics, f, indent=4)
 
-def save_rouge_metrics(rouge_metrics, output_file=METRICS_DIR / Path("rouge/"), epochs=EPOCHS, batch_size=BATCH_SIZE, lr=LR):
+def save_single_metric(metric_name, metric, output_file=METRICS_DIR, epochs=EPOCHS, batch_size=BATCH_SIZE, lr=LR):
     """
     Save ROUGE metrics to a JSON file.
     
@@ -25,10 +25,10 @@ def save_rouge_metrics(rouge_metrics, output_file=METRICS_DIR / Path("rouge/"), 
         rouge_metrics (dict): Dictionary containing ROUGE metrics.
         output_file (str): Path to the output file.
     """
-    output_file = output_file / Path(f"rouge_metrics_{epochs}epochs_{batch_size}batchsize_{lr}lr.json")
+    output_file = output_file / Path(f"/{metric_name}/{metric_name}_metrics_{epochs}epochs_{batch_size}batchsize_{lr}lr.json")
     import json
     with open(output_file, "w") as f:
-        json.dump(rouge_metrics, f, indent=4)
+        json.dump(metric, f, indent=4)
 
 
 

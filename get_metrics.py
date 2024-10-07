@@ -25,23 +25,24 @@ for sample in tqdm(test_dataset, desc=f"Iterating over {MAX_METRIC_ITER} photos"
     image = sample['image']
     image_name = sample['filename']
     moondream_caption = captioner.get_caption(image)
-    hypothesis = [moondream_caption]
-    references = [sample['caption']]
+    hypothesis = moondream_caption
+    references = sample['caption']
 
     rouge_metrics.append(captioner.get_rouge_metrics(hypothesis, references))
-    # bleu_metrics.append(captioner.get_bleu_metrics(hypothesis, references))
+    bleu_metrics.append(captioner.get_bleu_metrics(hypothesis, references))
     # meteor_metrics.append(captioner.get_meteor_metrics(hypothesis, references))
 
     if image_name not in metrics:
         metrics[image_name] = {}
     metrics[image_name] = {
         "rouge": rouge_metrics[i],
-        # "bleu": bleu_metrics[i],
+        "bleu": bleu_metrics[i],
         # "meteor": meteor_metrics[i]
     }
     i += 1
 
-save_rouge_metrics(rouge_metrics=rouge_metrics)
+save_single_metric(metric_name = 'rouge', metric=rouge_metrics)
+save_single_metric(metric_name = 'bleu', metric=bleu_metrics)
 # save_bleu_metrics(bleu_metrics=bleu_metrics)
 # save_meteor_metrics(meteor_metrics=meteor_metrics)
 save_metrics(metrics=metrics)

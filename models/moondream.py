@@ -1,10 +1,9 @@
 import torch
-import json
-import os
-import evaluate
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from config import *
 from rouge_metric import PyRouge
+from nltk.translate.bleu_score import sentence_bleu
+from nltk import word_tokenize
 
 class MoondreamCaptioner:
     def __init__(self, torch_device = DEVICE, dtype = DTYPE, model_path = None, tokenizer_path = None):
@@ -67,44 +66,16 @@ class MoondreamCaptioner:
             prompt = self._default_prompt
         enc_image = self._moondream_model.encode_image(image)
         return self._moondream_model.answer_question(enc_image, prompt, self._moondream_tokenizer, temperature=0.1, do_sample=True)
-
-    def compute_metrics(self, dataloader):
-        decoded_preds = []
-        decoded_labels = []
-
-        for val_batch in dataloader:
-            val_batch = {k: v.to(self._device) for k, v in val_batch.items()}
-            with torch.no_grad():
-                outputs = self._moondream_model(**val_batch)
-                predictions = outputs.logits.argmax(dim=-1)
-
-                decoded_preds.extend(self._moondream_tokenizer.batch_decode(predictions, skip_special_tokens=True))
-                decoded_labels.extend(self._moondream_tokenizer.batch_decode(val_batch['input_ids'], skip_special_tokens=True))
-
-        decoded_labels = [[label] for label in decoded_labels]
-
-        bleu_result = self.bleu_metric.compute(predictions=decoded_preds, references=decoded_labels)
-        meteor_result = self.meteor_metric.compute(predictions=decoded_preds, references=decoded_labels)
-        rouge_result = self.rouge_metric.compute(predictions=decoded_preds, references=decoded_labels)
-
-        self.metric_logs["bleu"].append(bleu_result["bleu"])
-        self.metric_logs["meteor"].append(meteor_result["meteor"])
-        self.metric_logs["rougeL"].append(rouge_result["rougeL"].mid.fmeasure)
-
-    def save_metrics_to_file(self, metrics, output_file="metrics_log.json"):
-        if os.path.exists(output_file):
-            with open(output_file, "r") as f:
-                data = json.load(f)
-        else:
-            data = []
-
-        data.append(metrics)
-
-        with open(output_file, "w") as f:
-            json.dump(data, f, indent=4)
     
     def get_rouge_metrics(self, hypothesis, references):
         rouge = PyRouge(rouge_n=(1, 2, 4), rouge_l=True, rouge_w=True, rouge_w_weight=1.2, rouge_s=True, rouge_su=True, skip_gap=4)
-        scores = rouge.evaluate(hypothesis, references)
+        scores = rouge.evaluate([hypothesis], [references])
         self.metric_logs["rouge"].append(scores)
         return scores
+    
+    def get_bleu_metrics(self, hypothesis, references):
+        references = [word_tokenize(reference) for reference in references]
+        hypothesis = word_tokenize(hypothesis)
+        score = sentence_bleu(references, hypothesis)
+        self.metric_logs["bleu"].append(score)
+        return score
