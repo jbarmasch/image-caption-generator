@@ -48,7 +48,7 @@ def generate_captions(image_paths, captioners, get_statistics = False):
             print("="*50)
 
 if __name__ == "__main__":
-    torch_device = torch.device("cpu") # torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # torch_device = torch.device("cpu") # torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Define the image paths
     # src_directory = Path("F:\\Datasets\\archive\\flickr30k_images\\flickr30k_images\\flickr30k_images")
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     # llava = llavaCaptioner()
     # blip = BLIPCaptioner(torch_device=torch_device)
     print("BLIP model loaded")
-    moondream = MoondreamCaptioner(torch_device=torch_device)
+    moondream = MoondreamCaptioner(model_path=Path("Training results/Weights/Moondream/Current/model"), tokenizer_path=Path("Training results/Weights/Moondream/Current/tokenizer"))
     print("Moondream model loaded")
     
     # Generate captions and compare performance
