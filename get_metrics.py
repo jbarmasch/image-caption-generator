@@ -12,7 +12,7 @@ train_dataset, val_dataset, test_dataset = dataset.get_datasets()
 
 
 def original_metrics():
-    captioner = MoondreamCaptioner(model_path=OUTPUT_DIR / Path('model'), tokenizer_path=OUTPUT_DIR / Path('tokenizer'))
+    captioner = MoondreamCaptioner()
     moondream = captioner._moondream_model
     tokenizer = captioner._moondream_tokenizer
     tokenizer.pre_tokenizer = Whitespace()
@@ -21,42 +21,38 @@ def original_metrics():
     rouge_metrics = []
     bleu_metrics = []
     meteor_metrics = []
-    for temp in TEMPERATURES:
-        for sample in tqdm(test_dataset, desc=f"Iterating over {MAX_METRIC_ITER} photos for temperature {temp}"):
-            if i >= MAX_METRIC_ITER:
-                break
-            image = sample['image']
-            image_name = sample['filename']
-            start_time = time.time()
-            moondream_caption = captioner.get_caption(image, temperature=temp)
-            end_time = time.time()
-            time_taken = end_time - start_time
-            hypothesis = moondream_caption
-            references = sample['caption']
-
-            rouge_metrics.append(captioner.get_rouge_metrics(hypothesis, references))
-            bleu_metrics.append(captioner.get_bleu_metrics(hypothesis, references))
-            meteor_metrics.append(captioner.get_meteor_metrics(hypothesis, references))
-
-            if image_name not in metrics:
-                metrics[image_name] = {}
-            metrics[image_name] = {
-                "caption": hypothesis,
-                "time_taken": time_taken,
-                "references": references,
-                "rouge": rouge_metrics[i],
-                "bleu": bleu_metrics[i],
-                "meteor": meteor_metrics[i]
-            }
-            i += 1
-        i = 0
-        save_single_metric(metric_name = 'rouge', metric=rouge_metrics, temperature=temp)
-        save_single_metric(metric_name = 'bleu', metric=bleu_metrics, temperature=temp)
-        save_single_metric(metric_name = 'meteor', metric=meteor_metrics, temperature=temp)
-        save_metrics(metrics=metrics, temperature=temp)
-        rouge_metrics = []
-        bleu_metrics = []
-        meteor_metrics = []
+    
+    for sample in tqdm(test_dataset, desc=f"Iterating over 1000 photos for original model"):
+        image = sample['image']
+        image_name = sample['filename']
+        start_time = time.time()
+        moondream_caption = captioner.get_caption(image)
+        end_time = time.time()
+        time_taken = end_time - start_time
+        hypothesis = moondream_caption
+        references = sample['caption']
+        rouge_metrics.append(captioner.get_rouge_metrics(hypothesis, references))
+        bleu_metrics.append(captioner.get_bleu_metrics(hypothesis, references))
+        meteor_metrics.append(captioner.get_meteor_metrics(hypothesis, references))
+        if image_name not in metrics:
+            metrics[image_name] = {}
+        metrics[image_name] = {
+            "caption": hypothesis,
+            "time_taken": time_taken,
+            "references": references,
+            "rouge": rouge_metrics[i],
+            "bleu": bleu_metrics[i],
+            "meteor": meteor_metrics[i]
+        }
+        i += 1
+    
+    save_single_metric(metric_name = 'rouge', metric=rouge_metrics, temperature=0, epochs=0, batch_size=0, lr=0)
+    save_single_metric(metric_name = 'bleu', metric=bleu_metrics, temperature=0, epochs=0, batch_size=0, lr=0)
+    save_single_metric(metric_name = 'meteor', metric=meteor_metrics, temperature=0, epochs=0, batch_size=0, lr=0)
+    save_metrics(metrics=metrics, temperature=0, epochs=0, batch_size=0, lr=0)
+    rouge_metrics = []
+    bleu_metrics = []
+    meteor_metrics = []
 
 def get_all_metrics():
     parent_dir = Path('F:/Storage de fine tunings/BUENOS')
@@ -115,5 +111,5 @@ def get_all_metrics():
             meteor_metrics = []
 
 if __name__ == "__main__":
-    # original_metrics()
-    get_all_metrics()
+    original_metrics()
+    # get_all_metrics()
