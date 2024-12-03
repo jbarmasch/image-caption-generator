@@ -11,7 +11,7 @@ MOONDREAM_VERSION = "2024-07-23"
 EPOCHS = 1
 BATCH_SIZE = 16
 GRAD_ACCUM_STEPS = 1
-LR = 3e-5
+LR = 3e-6
 ATTN_IMPL = None
 IMG_TOKENS = 729
 ANSWER_EOS = "<|endoftext|>"
@@ -22,9 +22,9 @@ TEST_LEN = 1000
 ADAM_EPS = 1e-6
 
 # Metrics
-MAX_METRIC_ITER = 150
-METRICS_DIR = Path('/home/juanmb/Desktop/UASTW/Metrics and graphs/Last compare')
-TEMPERATURES = [0.3, 0.7]
+MAX_METRIC_ITER = 1000
+METRICS_DIR = Path('./Training results/Metrics/Moondream')
+TEMPERATURES = [None]
 
 # Graphs
 GRAPH_DIR = Path('./Training results/Graphs/Moondream')
