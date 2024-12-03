@@ -14,3 +14,4 @@ rouge_score
 scikit-learn
 bitsandbytes
 more_itertools
+rouge-metric

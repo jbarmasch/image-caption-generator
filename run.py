@@ -21,7 +21,7 @@ def generate_captions(image_paths, captioners, get_statistics = False):
         # Generate captions
         for captioner in captioners:
             start_time = time.time()
-            caption = captioner.get_caption(image)
+            caption = captioner.get_caption(image, temperature=1)
             end_time = time.time()
             total_time = end_time - start_time
             
@@ -48,7 +48,7 @@ def generate_captions(image_paths, captioners, get_statistics = False):
             print("="*50)
 
 if __name__ == "__main__":
-    torch_device = torch.device("cpu") # torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # torch_device = torch.device("cpu") # torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Define the image paths
     # src_directory = Path("F:\\Datasets\\archive\\flickr30k_images\\flickr30k_images\\flickr30k_images")
@@ -59,10 +59,10 @@ if __name__ == "__main__":
     
     # Initialize the captioners
     # llava = llavaCaptioner()
-    blip = BLIPCaptioner(torch_device=torch_device)
-    print("BLIP model loaded")
-    moondream = MoondreamCaptioner(torch_device=torch_device)
+    # blip = BLIPCaptioner(torch_device=torch_device)
+    # print("BLIP model loaded")
+    moondream = MoondreamCaptioner(model_path=Path("F:/Storage de fine tunings/BUENOS/1epochs_8batch_3e-5lr/model"), tokenizer_path=Path("F:/Storage de fine tunings/BUENOS/1epochs_8batch_3e-5lr/tokenizer"))
     print("Moondream model loaded")
     
     # Generate captions and compare performance
-    generate_captions(image_paths, [blip, moondream], get_statistics=False)
+    generate_captions(image_paths, [moondream], get_statistics=False)

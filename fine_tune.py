@@ -157,6 +157,6 @@ for epoch in range(EPOCHS):
         tokenizer.save_pretrained(OUTPUT_DIR + f"/tokenizer_epoch_{epoch + 1}")
         print(f"Best model saved at epoch {epoch + 1}")
 
-moondream.save_pretrained(OUTPUT_DIR + "/model")
-tokenizer.save_pretrained(OUTPUT_DIR + "/tokenizer")
+moondream.save_pretrained(OUTPUT_DIR / Path("/model"))
+tokenizer.save_pretrained(OUTPUT_DIR / Path("/tokenizer"))
 print("Model saved")
