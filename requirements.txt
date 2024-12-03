@@ -1,7 +1,7 @@
-tensorflow_datasets
-torch @  https://download.pytorch.org/whl/cu121/torch-2.2.0%2Bcu121-cp312-cp312-linux_x86_64.whl#sha256=330293cdae296bdb7b925412c561ec3d53cdc82c38104e43385fdbc4eb8f0e72
-torchvision
-transformers
+# tensorflow_datasets
+# torch # @  https://download.pytorch.org/whl/cu121/torch-2.2.0%2Bcu121-cp311-cp311-linux_x86_64.whl#sha256=330293cdae296bdb7b925412c561ec3d53cdc82c38104e43385fdbc4eb8f0e72
+# torchvision
+# transformers
 Pillow
 pathlib2
 numpy<2.0
@@ -15,3 +15,4 @@ scikit-learn
 bitsandbytes
 more_itertools
 rouge-metric
+matplotlib
