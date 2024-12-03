@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 import models
 from PIL import Image
 import models.moondream
@@ -13,12 +13,14 @@ app = FastAPI()
 # model.eval()
 
 # Function to generate caption
-def generate_caption(image: Image.Image) -> str:
-    return model.get_caption(image)
+def generate_caption(image: Image.Image, temperature, prompt) -> str:
+    return model.get_caption(image, temperature=temperature, prompt=prompt)
 
 # Endpoint to receive image and return caption
 @app.post("/caption/")
-async def create_caption(file: UploadFile = File(...)):
+async def create_caption(file: UploadFile = File(...), 
+                         temperature: float = Query(None, ge=0.0, description="Optional temperature for caption generation"),
+                         prompt: str = Query(None, description="Optional prompt for caption generation")):
     try:
         # Read image file
         image = Image.open(file.file)
@@ -26,7 +28,7 @@ async def create_caption(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Invalid image file")
 
     # Generate the caption
-    caption = generate_caption(image)
+    caption = generate_caption(image, temperature=temperature, prompt=prompt)
     
     return {"caption": caption}
 
