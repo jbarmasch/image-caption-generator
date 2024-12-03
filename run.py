@@ -21,7 +21,7 @@ def generate_captions(image_paths, captioners, get_statistics = False):
         # Generate captions
         for captioner in captioners:
             start_time = time.time()
-            caption = captioner.get_caption(image)
+            caption = captioner.get_caption(image, temperature=1)
             end_time = time.time()
             total_time = end_time - start_time
             
@@ -60,8 +60,8 @@ if __name__ == "__main__":
     # Initialize the captioners
     # llava = llavaCaptioner()
     # blip = BLIPCaptioner(torch_device=torch_device)
-    print("BLIP model loaded")
-    moondream = MoondreamCaptioner(model_path=Path("Training results/Weights/Moondream/Current/model"), tokenizer_path=Path("Training results/Weights/Moondream/Current/tokenizer"))
+    # print("BLIP model loaded")
+    moondream = MoondreamCaptioner(model_path=Path("F:/Storage de fine tunings/BUENOS/1epochs_8batch_3e-5lr/model"), tokenizer_path=Path("F:/Storage de fine tunings/BUENOS/1epochs_8batch_3e-5lr/tokenizer"))
     print("Moondream model loaded")
     
     # Generate captions and compare performance
